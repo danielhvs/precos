@@ -31,6 +31,12 @@
            :value @value
            :on-change #(reset! value (-> % .-target .-value))}])
 
+(defn tabela []
+  [:table  
+   [:tr [:td "Produto"] [:td "Preco"]]
+   (for [p @produtos]
+     [:tr [:td (:produto p)] [:td (:valor p)]])])
+
 ;; -------------------------
 ;; Views
 
@@ -39,7 +45,8 @@
    [:div [:label "Produto"](input-element "p" "p" "input" cache-produto) ]
    [:div [:label "Valor"] (input-element "v" "v" "input" cache-valor)]
    [:div [:input {:type :button :value "Cadastra" :on-click #(cadastra)}]]
-   [:div [:label (str @produtos)]]])
+   [:div [tabela]]
+   ])
 
 (defn about-page []
   [:div [:h2 "About precos"]
