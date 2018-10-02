@@ -1,6 +1,8 @@
 (ns precos.core
     (:require [reagent.core :as reagent :refer [atom]]
               [secretary.core :as secretary :include-macros true]
+              [cljs-time.core :as t]
+              [cljs-time.format :as f]
               [accountant.core :as accountant]))
 
 (enable-console-print!)
@@ -15,19 +17,24 @@
 
 ;; -------------------------
 ;; Funcoes
-(defn formata [p]
-  (str "'" p "'"))
+(defn formata [prefixo p sufixo]
+  (str prefixo p sufixo))
+
+(defn aspas [p]
+  (formata "'" p "'"))
+(defn reais [p]
+  (formata "R$" p ""))
 
 (defn cadastra [] 
-  (let [p {:produto @cache-produto :valor @cache-valor}]
+  (let [p {:produto @cache-produto :valor @cache-valor :data (t/now)}]
     (do
       (swap! produtos conj p)
-      (reset! resultado (str (formata (:produto p)) " cadastrado com sucesso.")))))
+      (reset! resultado (str (aspas (:produto p)) " cadastrado com sucesso.")))))
 
 (defn filtra []
   (do
     (reset! visao (filter #(= @cache-produto (:produto %)) @produtos))
-    (reset! resultado (str "Mostrando " (formata @cache-produto) ":"))
+    (reset! resultado (str "Mostrando " (aspas @cache-produto) ":"))
 ))
 
 
@@ -46,9 +53,9 @@
 
 (defn tabela []
   [:table  {:border 2}
-   [:tr [:td "Produto"] [:td "Preco"]]
+   [:tr [:td "Produto"] [:td "Preco"] [:td "Data"]]
    (for [v @visao]
-     [:tr [:td (:produto v)] [:td (:valor v)]])])
+     [:tr [:td (aspas (:produto v))] [:td (reais (:valor v))] [:td (f/unparse (f/formatter "DD/MM/yyyy") (:data v))]])])
 
 (defn debug []
   [:div [:label "DEBUG ABAIXO"] 
