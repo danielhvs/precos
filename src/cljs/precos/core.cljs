@@ -2,32 +2,44 @@
     (:require [reagent.core :as reagent :refer [atom]]
               [secretary.core :as secretary :include-macros true]
               [accountant.core :as accountant]))
-(enable-console-print!)
 
-(println "oi mundo")
+(enable-console-print!)
 
 ;; -------------------------
 ;; Estado
-(defonce moedas (atom {:peso {:nome "PES" :preco-cambio 0.33 :preco-loja 0 :carteira 0 :reais-carteira 0}}))
+(defonce produtos (atom []))
+(defonce cache-produto (atom ""))
+(defonce cache-valor (atom ""))
+
+;; -------------------------
+;; Funcoes
+(defn cadastra [] 
+  (do
+    (swap! produtos conj {:produto @cache-produto :valor @cache-valor})
+))
 
 ;; -------------------------
 ;; Componentes
-(defn input-valor []
-  [:input {:type "text" 
-           :on-change #("oi")}])
- 
-(defn texto [] 
-  [:label "TESTE TEXTO" ])
+(defn input-element
+  "An input element which updates its value on change"
+  [id name type value]
+  [:input {:id id
+           :name name
+           :class "form-control"
+           :type type
+           :required ""
+           :value @value
+           :on-change #(reset! value (-> % .-target .-value))}])
 
 ;; -------------------------
 ;; Views
 
 (defn home-page []
   [:div
-   [:div [:label "Produto"] [input-valor]]
-   [:div [:label "Valor"] [input-valor]]
-   [:div [:button "Cadastrar"]]
-])
+   [:div [:label "Produto"](input-element "p" "p" "input" cache-produto) ]
+   [:div [:label "Valor"] (input-element "v" "v" "input" cache-valor)]
+   [:div [:input {:type :button :value "Cadastra" :on-click #(cadastra)}]]
+   [:div [:label (str @produtos)]]])
 
 (defn about-page []
   [:div [:h2 "About precos"]
