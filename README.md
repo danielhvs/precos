@@ -10,7 +10,7 @@ To start the Figwheel compiler, navigate to the project folder and run the follo
 lein figwheel
 ```
 
-Figwheel will automatically push cljs changes to the browser. The server will be available at [http://localhost:3449](http://localhost:3449) once Figwheel starts up.  To view your devcards, type `(switch-to-build devcards)` at the Figwheel REPL and navigate to [http://localhost:3449/cards](http://localhost:3449/cards). 
+Figwheel will automatically push cljs changes to the browser. The server will be available at [http://localhost:3449](http://localhost:3449) once Figwheel starts up. 
 
 Figwheel also starts `nREPL` using the value of the `:nrepl-port` in the `:figwheel`
 config found in `project.clj`. By default the port is set to `7002`.

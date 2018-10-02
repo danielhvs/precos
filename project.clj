@@ -64,16 +64,7 @@
               :pretty-print  true}}
 
 
-            :devcards
-            {:source-paths ["src/cljs" "src/cljc" "env/dev/cljs"]
-             :figwheel {:devcards true}
-             :compiler {:main "precos.cards"
-                        :asset-path "js/devcards_out"
-                        :output-to "target/cljsbuild/public/js/app_devcards.js"
-                        :output-dir "target/cljsbuild/public/js/devcards_out"
-                        :source-map-timestamp true
-                        :optimizations :none
-                        :pretty-print true}}
+
             }
    }
 
@@ -82,8 +73,6 @@
    :server-port 3449
    :nrepl-port 7002
    :nrepl-middleware [cider.piggieback/wrap-cljs-repl
-                      cider.nrepl/cider-middleware
-                      refactor-nrepl.middleware/wrap-refactor
                       ]
    :css-dirs ["resources/public/css"]
    :ring-handler precos.handler/app}
@@ -99,18 +88,12 @@
                                   [figwheel-sidecar "0.5.16"]
                                   [nrepl "0.4.4"]
                                   [cider/piggieback "0.3.8"]
-                                  [devcards "0.2.3" :exclusions [cljsjs/react]]
                                   [pjstadig/humane-test-output "0.8.3"]
                                   
  ]
 
                    :source-paths ["env/dev/clj"]
                    :plugins [[lein-figwheel "0.5.16"]
-                             [cider/cider-nrepl "0.15.1"]
-                             [org.clojure/tools.namespace "0.3.0-alpha4"
-                              :exclusions [org.clojure/tools.reader]]
-                             [refactor-nrepl "2.3.1"
-                              :exclusions [org.clojure/clojure]]
 ]
 
                    :injections [(require 'pjstadig.humane-test-output)
