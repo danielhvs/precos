@@ -13,6 +13,7 @@
 (defonce visao (atom []))
 (defonce cache-produto (atom ""))
 (defonce cache-valor (atom ""))
+(defonce cache-local (atom ""))
 (defonce resultado (atom ""))
 
 ;; -------------------------
@@ -26,7 +27,7 @@
   (formata "R$" p ""))
 
 (defn cadastra [] 
-  (let [p {:produto @cache-produto :valor @cache-valor :data (t/now)}]
+  (let [p {:produto @cache-produto :valor @cache-valor :data (t/now) :local @cache-local}]
     (do
       (swap! produtos conj p)
       (reset! resultado (str (aspas (:produto p)) " cadastrado com sucesso.")))))
@@ -36,7 +37,6 @@
     (reset! visao (filter #(= @cache-produto (:produto %)) @produtos))
     (reset! resultado (str "Mostrando " (aspas @cache-produto) ":"))
 ))
-
 
 ;; -------------------------
 ;; Componentes
@@ -53,9 +53,9 @@
 
 (defn tabela []
   [:table  {:border 2}
-   [:tr [:td "Produto"] [:td "Preco"] [:td "Data"]]
+   [:tr [:td "Produto"] [:td "Preco"] [:td "Data"] [:td "Local"]]
    (for [v @visao]
-     [:tr [:td (aspas (:produto v))] [:td (reais (:valor v))] [:td (f/unparse (f/formatter "DD/MM/yyyy") (:data v))]])])
+     [:tr [:td (aspas (:produto v))] [:td (reais (:valor v))] [:td (f/unparse (f/formatter "DD/MM/yyyy") (:data v))] [:td (:local v)]])])
 
 (defn debug []
   [:div [:label "DEBUG ABAIXO"] 
@@ -67,11 +67,11 @@
 
 ;; -------------------------
 ;; Views
-
 (defn home-page []
   [:div
-   [:div [:label "Produto"](input-element "p" "p" "input" cache-produto) ]
+   [:div [:label "Produto"] (input-element "p" "p" "input" cache-produto) ]
    [:div [:label "Valor"] (input-element "v" "v" "input" cache-valor)]
+   [:div [:label "Local"] (input-element "l" "l" "input" cache-local)]
    [:div
     [:input {:type :button :value "Cadastra" :on-click #(cadastra)}]
     [:input {:type :button :value "Filtra" :on-click #(filtra)}]
