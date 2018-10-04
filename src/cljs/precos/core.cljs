@@ -13,7 +13,6 @@
 (defonce cache-produto (atom ""))
 (defonce cache-valor (atom ""))
 (defonce cache-local (atom ""))
-(defonce resultado (atom ""))
 
 ;; -------------------------
 ;; Funcoes
@@ -29,7 +28,7 @@
   (let [p {:produto @cache-produto :valor @cache-valor :data (t/now) :local @cache-local}]
     (do
       (swap! produtos conj p)
-      (reset! resultado (str (aspas (:produto p)) " cadastrado com sucesso.")))))
+      )))
 
 ;; -------------------------
 ;; Componentes
@@ -85,7 +84,8 @@
    [:div [:label "Local"] (input-element "l" "l" "input" cache-local)]
    [:div
     [:input {:type :button :value "Cadastra" :on-click #(cadastra)}]
-    [:label @resultado]
+    (for [p (distinct (map :produto @produtos))]
+      [:input {:type :button :value p :on-click #(reset! cache-produto p)}])
     ]
    [:div [tabela]]
    #_[:div [debug]]
