@@ -44,15 +44,30 @@
            :value @value
            :on-change #(reset! value (-> % .-target .-value))}])
 
+(defn elemento [v]
+  [:tr 
+   [:td (aspas (:produto v))] 
+   [:td (reais (:valor v))] 
+   [:td (f/unparse (f/formatter "DD/MM/yyyy hh:mm:ss") (:data v))] 
+   [:td (:local v)]])
+
 (defn tabela []
   (let [visao (atom []) ]
     (fn []
       (doall
         (reset! visao (filter #(= @cache-produto (:produto %)) @produtos))
-        [:table  {:border 2}
-         [:tr [:td "Produto"] [:td "Preco"] [:td "Data"] [:td "Local"]]
-         (for [v @visao]
-           [:tr [:td (aspas (:produto v))] [:td (reais (:valor v))] [:td (f/unparse (f/formatter "DD/MM/yyyy hh:mm:ss") (:data v))] [:td (:local v)]])]))))
+        [:div 
+         (when-let [v (first (sort-by :preco @visao))]
+           [:table  {:border 2}
+            [:caption "Mais barato"]
+            [:tr [:td "Produto"] [:td "Preco"] [:td "Data"] [:td "Local"]]
+            (elemento v)])
+         (when (not (empty? @visao))
+           [:table  {:border 2}
+            [:caption "Histórico"]
+            [:tr [:td "Produto"] [:td "Preco"] [:td "Data"] [:td "Local"]]
+            (for [v @visao]
+              (elemento v))])]))))
 
 (defn debug []
   [:div [:label "DEBUG ABAIXO"] 
@@ -73,7 +88,7 @@
     [:label @resultado]
     ]
    [:div [tabela]]
-   [:div [debug]]
+   #_[:div [debug]]
    ])
 
 (defn about-page []
