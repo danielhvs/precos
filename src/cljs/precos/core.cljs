@@ -52,7 +52,7 @@
         [:table  {:border 2}
          [:tr [:td "Produto"] [:td "Preco"] [:td "Data"] [:td "Local"]]
          (for [v @visao]
-           [:tr [:td (aspas (:produto v))] [:td (reais (:valor v))] [:td (f/unparse (f/formatter "DD/MM/yyyy") (:data v))] [:td (:local v)]])]))))
+           [:tr [:td (aspas (:produto v))] [:td (reais (:valor v))] [:td (f/unparse (f/formatter "DD/MM/yyyy hh:mm:ss") (:data v))] [:td (:local v)]])]))))
 
 (defn debug []
   [:div [:label "DEBUG ABAIXO"] 
