@@ -31,11 +31,6 @@
       (swap! produtos conj p)
       (reset! resultado (str (aspas (:produto p)) " cadastrado com sucesso.")))))
 
-(defn filtra []
-  (do
-    (reset! resultado (str "Mostrando " (aspas @cache-produto) ":"))
-))
-
 ;; -------------------------
 ;; Componentes
 (defn input-element
@@ -75,7 +70,6 @@
    [:div [:label "Local"] (input-element "l" "l" "input" cache-local)]
    [:div
     [:input {:type :button :value "Cadastra" :on-click #(cadastra)}]
-    [:input {:type :button :value "Filtra" :on-click #(filtra)}]
     [:label @resultado]
     ]
    [:div [tabela]]
