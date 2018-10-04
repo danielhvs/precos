@@ -10,7 +10,6 @@
 ;; -------------------------
 ;; Estado
 (defonce produtos (atom []))
-(defonce visao (atom []))
 (defonce cache-produto (atom ""))
 (defonce cache-valor (atom ""))
 (defonce cache-local (atom ""))
@@ -34,7 +33,6 @@
 
 (defn filtra []
   (do
-    (reset! visao (filter #(= @cache-produto (:produto %)) @produtos))
     (reset! resultado (str "Mostrando " (aspas @cache-produto) ":"))
 ))
 
@@ -52,17 +50,20 @@
            :on-change #(reset! value (-> % .-target .-value))}])
 
 (defn tabela []
-  [:table  {:border 2}
-   [:tr [:td "Produto"] [:td "Preco"] [:td "Data"] [:td "Local"]]
-   (for [v @visao]
-     [:tr [:td (aspas (:produto v))] [:td (reais (:valor v))] [:td (f/unparse (f/formatter "DD/MM/yyyy") (:data v))] [:td (:local v)]])])
+  (let [visao (atom []) ]
+    (fn []
+      (doall
+        (reset! visao (filter #(= @cache-produto (:produto %)) @produtos))
+        [:table  {:border 2}
+         [:tr [:td "Produto"] [:td "Preco"] [:td "Data"] [:td "Local"]]
+         (for [v @visao]
+           [:tr [:td (aspas (:produto v))] [:td (reais (:valor v))] [:td (f/unparse (f/formatter "DD/MM/yyyy") (:data v))] [:td (:local v)]])]))))
 
 (defn debug []
   [:div [:label "DEBUG ABAIXO"] 
    [:div [:label (str "produto: " @cache-produto)]] 
    [:div [:label (str "valor: " @cache-valor)]]
    [:div [:label (str "produtos: " @produtos)]]
-   [:div [:label (str "visao: " @visao)]]
 ])
 
 ;; -------------------------
