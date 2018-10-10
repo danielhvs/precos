@@ -96,12 +96,15 @@
       [:input {:type :button :value p :on-click #(reset! cache-produto p)}])
     ]
    [:div [tabela]]
-   #_[:div [debug]]
+   [:div [:a {:href "/lista-compras"} "Lista de compras"]]
+   [:div [debug]]
    ])
 
-(defn about-page []
-  [:div [:h2 "About precos"]
-   [:div [:a {:href "/"} "go to the home page"]]])
+(defn lista-compras []
+  [:div [:h2 "Lista de Compras"]
+   (for [p (distinct (map :produto @produtos))]
+     [:div [:input {:type :button :value p :on-click #(reset! cache-produto p)}]])  
+   [:div [:a {:href "/"} "Preços dos produtos"]]])
 
 ;; -------------------------
 ;; Routes
@@ -114,8 +117,8 @@
 (secretary/defroute "/" []
   (reset! page #'home-page))
 
-(secretary/defroute "/about" []
-  (reset! page #'about-page))
+(secretary/defroute "/lista-compras" []
+  (reset! page #'lista-compras))
 
 ;; -------------------------
 ;; Initialize app
