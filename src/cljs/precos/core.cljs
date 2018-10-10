@@ -13,27 +13,40 @@
 (defonce cache-produto (atom ""))
 (defonce cache-preco (atom ""))
 (defonce cache-local (atom ""))
+(defonce produtos-mercado 
+[
+{:produto "queijo" :comprar false}
+{:produto "arroz" :comprar true}
+{:produto "feijao" :comprar false}
+])
+(defonce mercado (atom produtos-mercado))
 
 ;; -------------------------
 ;; Funcoes
 (defn formata [prefixo p sufixo]
   (str prefixo p sufixo))
-
 (defn formata-aspas [p]
   (formata "'" p "'"))
 (defn formata-reais [p]
   (formata "R$ " p ""))
 (defn formata-data [p]
   (f/unparse (f/formatter "DD/MM/yyyy hh:mm:ss") p))
-
 (defn ->reais [p]
   (double p))
-
 (defn cadastra [] 
   (let [p {:produto @cache-produto :preco @cache-preco :data (l/local-now) :local @cache-local}]
     (do
       (swap! produtos conj p)
       )))
+(defn estilo-botao [p]
+  (if (:comprar p) {:background-color "#00FF00"}
+    {:background-color "#AA0000"}))
+(defn toggle-comprar [p]
+  (swap! mercado (fn [a] 
+                   (map (fn [i] (if (first (filter #(= (:produto i) (:produto p)) a)) 
+                                  (assoc i :comprar (not (:comprar i)))
+                                  i)) 
+                        a))))
 
 ;; -------------------------
 ;; Componentes
@@ -102,8 +115,9 @@
 
 (defn lista-compras []
   [:div [:h2 "Lista de Compras"]
-   (for [p (distinct (map :produto @produtos))]
-     [:div [:input {:type :button :value p :on-click #(reset! cache-produto p)}]])  
+   (for [p @mercado]
+     [:div [:input {:style (estilo-botao p) :type :button :value (:produto p) 
+                    :on-click #(toggle-comprar p)} ]])  
    [:div [:a {:href "/"} "Preços dos produtos"]]])
 
 ;; -------------------------
