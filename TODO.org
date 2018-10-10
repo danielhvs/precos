@@ -1,0 +1,3 @@
+* lista mercado integrada
+* colocar banco de dados
+* colocar em um servidor
