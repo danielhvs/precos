@@ -19,7 +19,10 @@
 )))
 
 (defroutes app
-  (ANY "/precos/:produto" [produto] (preco produto)))
+  (ANY "/precos/:produto" [produto] (preco produto))
+  (ANY "/*" [_] "on-line")
+
+)
 
 (def handler 
   (-> app 
