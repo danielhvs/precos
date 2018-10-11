@@ -1,40 +1,46 @@
 (ns precos.core
-    (:require [reagent.core :as reagent :refer [atom]]
-              [secretary.core :as secretary :include-macros true]
-              [cljs-time.format :as f]
-              [cljs-time.local :as l]
-              [accountant.core :as accountant]))
+  (:require-macros [cljs.core.async.macros :refer [go]])
+  (:require [reagent.core :as reagent :refer [atom]]
+            [secretary.core :as secretary :include-macros true]
+            [cljs-time.format :as f]
+            [cljs-time.local :as l]
+            [cljs-http.client :as http]
+            [cljs.core.async :refer [<!]]
+            [accountant.core :as accountant]))
 
 (enable-console-print!)
+
+;; Parse json
+(def json "{\"foo\": \"1\", \"bar\": 2, \"baz\": [1,2,3]}")
+(def a (js->clj (.parse js/JSON json) :keywordize-keys true))
 
 ;; -------------------------
 ;; Estado
 (defonce produtos (atom []))
 (defonce cache-produto (atom ""))
 (defonce cache-preco (atom ""))
-(defonce cache-local (atom ""))
+(defonce cache-local (atom (str a)))
 
 ;; -------------------------
 ;; Funcoes
 (defn formata [prefixo p sufixo]
   (str prefixo p sufixo))
-
 (defn formata-aspas [p]
   (formata "'" p "'"))
 (defn formata-reais [p]
   (formata "R$ " p ""))
 (defn formata-data [p]
   (f/unparse (f/formatter "DD/MM/yyyy hh:mm:ss") p))
-
 (defn ->reais [p]
   (double p))
 
 (defn cadastra [] 
   (let [p {:produto @cache-produto :preco @cache-preco :data (l/local-now) :local @cache-local}]
     (do
-      (swap! produtos conj p)
-      )))
-
+      (swap! produtos conj p))))
+(defn chama-servidor []
+  (go (let [response (<! (http/get "localhost:3000/precos/banana"))]
+        (reset! cache-local (str response)))))
 ;; -------------------------
 ;; Componentes
 (defn input-element
@@ -92,6 +98,7 @@
    [:div [:label "Local"] (input-element "l" "l" "input" cache-local identity)]
    [:div
     [:input {:type :button :value "Cadastra" :on-click #(cadastra)}]
+    [:input {:type :button :value "Cadastra" :on-click #(chama-servidor)}]
     (for [p (distinct (map :produto @produtos))]
       [:input {:type :button :value p :on-click #(reset! cache-produto p)}])
     ]

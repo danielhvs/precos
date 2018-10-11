@@ -13,6 +13,7 @@
                  [compojure "1.6.1"]
                  [hiccup "1.0.5"]
                  [yogthos/config "1.1.1"]
+                 [cljs-http "0.1.45"]
                  [org.clojure/clojurescript "1.10.339"
                   :scope "provided"]
                  [com.andrewmcveigh/cljs-time "0.5.2"]
