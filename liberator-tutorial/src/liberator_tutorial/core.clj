@@ -3,11 +3,13 @@
             [ring.middleware.params :refer [wrap-params]]
             [compojure.core :refer [defroutes ANY]]))
 
+(defresource preco [produto]
+  :available-media-types ["text/plain"]
+  :handle-ok (fn [_] (format "Consultar produto %s" produto)))
+
 (defroutes app
-  (ANY "/foo" [] (resource :available-media-types ["text/html"]
-                           :handle-ok (fn [ctx]
-                                        (format "<html>It's %d milliseconds since the beginning of the epoch."
-                                                (System/currentTimeMillis))))))
+  (ANY "/precos/:produto" [produto] (preco produto)))
+
 (def handler 
   (-> app 
       wrap-params))
