@@ -12,15 +12,21 @@
   (first (filter (fn [p] (= nome (:produto p))) produtos)))
 
 (defresource preco [produto]
+
   :allowed-methods [:get]
   :available-media-types ["application/json"]
-  :handle-ok (fn [ctx] (ring-response 
-                        {:headers {"X-Foo-Header" "this is america"} :body (json/write-str (filtra-produto produto))}
-)))
+  :handle-ok (fn [ctx] (ring-response {:headers {"status" "200" "Access-Control-Allow-Origin" "*"} 
+                                       :body (json/write-str (filtra-produto produto))})))
+
+(defresource nao-encontrado [p])
+  :allowed-methods [:get]
+  :available-media-types ["text/html"]
+  :handle-ok (fn [ctx] (ring-response {:headers {"status" "200" "Access-Control-Allow-Origin" "*"} 
+                                       :body "on-line"}))
 
 (defroutes app
   (ANY "/precos/:produto" [produto] (preco produto))
-  (ANY "/*" [_] "on-line")
+  (ANY "/*" [p] (nao-encontrado p))
 
 )
 

@@ -20,6 +20,7 @@
 (defonce cache-produto (atom ""))
 (defonce cache-preco (atom ""))
 (defonce cache-local (atom (str a)))
+(defonce a-debug (atom ""))
 
 ;; -------------------------
 ;; Funcoes
@@ -33,14 +34,18 @@
   (f/unparse (f/formatter "DD/MM/yyyy hh:mm:ss") p))
 (defn ->reais [p]
   (double p))
-
 (defn cadastra [] 
   (let [p {:produto @cache-produto :preco @cache-preco :data (l/local-now) :local @cache-local}]
     (do
       (swap! produtos conj p))))
-(defn chama-servidor []
-  (go (let [response (<! (http/get "localhost:3000/precos/banana"))]
-        (reset! cache-local (str response)))))
+
+(defn consulta []
+  (go
+    (let [response (<! (try (http/get (str "http://localhost:3000/precos/" @cache-produto) {:with-credentials? false})
+                            (catch :default e
+                              (reset! a-debug e))))]
+      (reset! cache-produto (str (:body response))))))
+
 ;; -------------------------
 ;; Componentes
 (defn input-element
@@ -83,10 +88,11 @@
              (elemento v))])]))))
 
 (defn debug []
-  [:div [:label "DEBUG ABAIXO"] 
-   [:div [:label (str "produto: " @cache-produto)]] 
-   [:div [:label (str "preco: " @cache-preco)]]
-   [:div [:label (str "produtos: " @produtos)]]
+  [:div [:label "DEBUG:"] 
+   #_[:div [:label (str "produto: " @cache-produto)]] 
+   #_[:div [:label (str "preco: " @cache-preco)]]
+   #_[:div [:label (str "produtos: " @produtos)]]
+   [:div [:label (str @a-debug)]]
 ])
 
 ;; -------------------------
@@ -98,12 +104,12 @@
    [:div [:label "Local"] (input-element "l" "l" "input" cache-local identity)]
    [:div
     [:input {:type :button :value "Cadastra" :on-click #(cadastra)}]
-    [:input {:type :button :value "Cadastra" :on-click #(chama-servidor)}]
+    [:input {:type :button :value "Consulta" :on-click #(consulta)}]
     (for [p (distinct (map :produto @produtos))]
       [:input {:type :button :value p :on-click #(reset! cache-produto p)}])
     ]
    [:div [tabela]]
-   #_[:div [debug]]
+   [:div [debug]]
    ])
 
 (defn about-page []
