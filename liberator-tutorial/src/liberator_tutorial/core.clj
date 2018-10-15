@@ -16,11 +16,11 @@
   :allowed-methods [:post]
   :available-media-types ["application/json"]
   :post! (fn [ctx] 
-           (dosync (let [body 1] 
-                     (swap! produtos conj (str (:params (:request ctx))))
-                     (println @produtos))))
+           (dosync (let [p (:params (:request ctx))]
+                     (swap! produtos conj (json/read-str (first p)))
+                     (println p))))
   :handle-ok (fn [ctx] (ring-response {:headers {"status" "200" "Access-Control-Allow-Origin" "*"} 
-                                       :body (json/write-str (or (filtra-produto "opi") {}))})))
+                                       :body (json/write-str @produtos)})))
 
 (defresource consulta [produto]
   :allowed-methods [:get]

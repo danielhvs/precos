@@ -35,12 +35,12 @@
 (defn ->reais [p]
   (double p))
 (defn cadastra [] 
-  (let [p {:produto @cache-produto :preco @cache-preco :local @cache-local}]
-    (go
-      (let [response (<! (try (http/post (str "http://localhost:3000/cadastra/" {:body {:novo {:bla 1 :cc 2}}} :content-type :json  ))
+  (go 
+    (let [p {:produto @cache-produto :preco @cache-preco :local @cache-local} 
+          response (<! (try (http/post (str "http://localhost:3000/cadastra/" (clj->js p) :content-type :json))
                             (catch :default e
                               (reset! a-debug e))))]
-      (reset! a-debug (:body response))))))
+      (reset! a-debug (:body response)))))
 
 (defn consulta []
   (go
