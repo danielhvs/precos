@@ -35,9 +35,12 @@
 (defn ->reais [p]
   (double p))
 (defn cadastra [] 
-  (let [p {:produto @cache-produto :preco @cache-preco :data (l/local-now) :local @cache-local}]
-    (do
-      (swap! produtos conj p))))
+  (let [p {:produto @cache-produto :preco @cache-preco :local @cache-local}]
+    (go
+      (let [response (<! (try (http/post (str "http://localhost:3000/cadastra/" {:body {:novo {:bla 1 :cc 2}}} :content-type :json  ))
+                            (catch :default e
+                              (reset! a-debug e))))]
+      (reset! a-debug (:body response))))))
 
 (defn consulta []
   (go
