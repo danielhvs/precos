@@ -3,13 +3,14 @@
    [liberator.core :refer [resource defresource]]
    [liberator.representation :refer [Representation ring-response]]
    [clojure.data.json :as json]
+   [java-time :as t]
    [ring.middleware.params :refer [wrap-params]]
    [compojure.core :refer [defroutes ANY]]))
 
-(def produtos [{:produto "banana" :preco 2.43 :local "angeloni"}])
+(def produtos [{:produto "banana" :preco 5.55 :local "bistek" :data (str (t/local-date))} {:produto "banana" :preco 2.43 :local "angeloni" :data (str (t/local-date))}])
 
 (defn filtra-produto [nome] 
-  (first (filter (fn [p] (= nome (:produto p))) produtos)))
+  (filter (fn [p] (= nome (:produto p))) produtos))
 
 (defresource preco [produto]
   :allowed-methods [:get]

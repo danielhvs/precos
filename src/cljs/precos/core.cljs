@@ -31,7 +31,7 @@
 (defn formata-reais [p]
   (formata "R$ " p ""))
 (defn formata-data [p]
-  (f/unparse (f/formatter "DD/MM/yyyy hh:mm:ss") p))
+  p)
 (defn ->reais [p]
   (double p))
 (defn cadastra [] 
@@ -44,7 +44,7 @@
     (let [response (<! (try (http/get (str "http://localhost:3000/precos/" @cache-produto) {:with-credentials? false})
                             (catch :default e
                               (reset! a-debug e))))]
-      (reset! cache-produto (str (:body response))))))
+      (reset! produtos (:body response)))))
 
 ;; -------------------------
 ;; Componentes
