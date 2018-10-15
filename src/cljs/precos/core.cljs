@@ -41,7 +41,7 @@
 
 (defn consulta []
   (go
-    (let [response (<! (try (http/get (str "http://localhost:3000/precos/" @cache-produto) {:with-credentials? false})
+    (let [response (<! (try (http/get (str "http://localhost:3000/consulta/" @cache-produto) {:with-credentials? false})
                             (catch :default e
                               (reset! a-debug e))))]
       (reset! produtos (:body response)))))
@@ -59,6 +59,8 @@
            :value @value
            :on-change #(reset! value (f (-> % .-target .-value)))}])
 
+
+;; TODO: colunas serem as chaves dos mapas
 (defn colunas-tabela []
   [:tr [:td "Produto"] [:td "Preco"] [:td "Data"] [:td "Local"]])
 

@@ -12,14 +12,14 @@
 (defn filtra-produto [nome] 
   (filter (fn [p] (= nome (:produto p))) produtos))
 
-(defresource preco [produto]
+(defresource consulta [produto]
   :allowed-methods [:get]
   :available-media-types ["application/json"]
   :handle-ok (fn [ctx] (ring-response {:headers {"status" "200" "Access-Control-Allow-Origin" "*"} 
                                        :body (json/write-str (or (filtra-produto produto) {}))})))
 (defroutes app
-  (ANY "/precos/:produto" [produto] (preco produto))
-  (ANY "/*" [] (preco "nenhum")))
+  (ANY "/consulta/:produto" [produto] (consulta produto))
+  (ANY "/*" [] (consulta "nenhum")))
 
 (def handler 
   (-> app 
