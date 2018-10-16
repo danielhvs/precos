@@ -55,7 +55,8 @@
               :pretty-print  false}}
             :app
             {:source-paths ["src/cljs" "src/cljc" "env/dev/cljs"]
-             :figwheel {:on-jsload "precos.core/mount-root"}
+             :figwheel {:on-jsload "precos.core/mount-root" 
+                        :open-urls ["http://localhost:3449"]}
              :compiler
              {:main "precos.dev"
               :asset-path "/js/out"
