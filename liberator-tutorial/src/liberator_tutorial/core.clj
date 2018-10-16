@@ -20,7 +20,7 @@
            (dosync (let [p (slurp (:body (:request ctx)))]
                      (println p)
                      (swap! produtos conj (json/read-str p)))))
-  :handle-created (fn [ctx] (ring-response {:headers {"Access-Control-Allow-Origin" "*"} 
+  :handle-created (fn [ctx] (ring-response {:headers {"status" "201" "Access-Control-Allow-Origin" "*"} 
                                             :body (json/write-str @produtos)})))
 
 (defresource consulta [produto]
