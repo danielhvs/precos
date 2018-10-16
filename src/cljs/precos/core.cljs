@@ -37,7 +37,7 @@
 (defn cadastra [] 
   (go 
     (let [p {:produto @cache-produto :preco @cache-preco :local @cache-local} 
-          response (<! (try (http/post (str "http://localhost:3000/cadastra/" (clj->js p) :content-type :json))
+          response (<! (try (http/post "http://localhost:3000/cadastra" {:json-params p} :content-type :json)
                             (catch :default e
                               (reset! a-debug e))))]
       (reset! a-debug (:body response)))))

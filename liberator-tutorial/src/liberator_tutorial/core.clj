@@ -1,6 +1,7 @@
 (ns liberator-tutorial.core
   (:require 
    [liberator.core :refer [resource defresource]]
+   [liberator.dev :refer [wrap-trace]]
    [liberator.representation :refer [Representation ring-response]]
    [clojure.data.json :as json]
    [java-time :as t]
@@ -12,15 +13,15 @@
 (defn filtra-produto [nome] 
   (filter (fn [p] (= nome (:produto p))) @produtos))
 
-(defresource cadastra [produto]
+(defresource cadastra []
   :allowed-methods [:post]
   :available-media-types ["application/json"]
   :post! (fn [ctx] 
-           (dosync (let [p (:params (:request ctx))]
-                     (swap! produtos conj (json/read-str (first p)))
-                     (println p))))
-  :handle-ok (fn [ctx] (ring-response {:headers {"status" "200" "Access-Control-Allow-Origin" "*"} 
-                                       :body (json/write-str @produtos)})))
+           (dosync (let [p (slurp (:body (:request ctx)))]
+                     (println p)
+                     (swap! produtos conj (json/read-str p)))))
+  :handle-created (fn [ctx] (ring-response {:headers {"Access-Control-Allow-Origin" "*"} 
+                                            :body (json/write-str @produtos)})))
 
 (defresource consulta [produto]
   :allowed-methods [:get]
@@ -30,9 +31,10 @@
 
 (defroutes app
   (ANY "/consulta/:produto" [produto] (consulta produto))
-  (ANY "/cadastra/:produto" [produto] (cadastra produto))
+  (ANY "/cadastra" [] (cadastra))
   (ANY "/*" [] (consulta "nenhum")))
 
 (def handler 
   (-> app 
+      (wrap-trace :header :ui)
       wrap-params))
