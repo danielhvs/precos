@@ -11,12 +11,9 @@
 (enable-console-print!)
 
 ;; Parse json
-(def json "{\"foo\": \"1\", \"bar\": 2, \"baz\": [1,2,3]}")
 (defn json->clj [json] (js->clj (.parse js/JSON json) :keywordize-keys true))
-
-
-
-(defn clj->json [p] (.stringify js/JSON (clj->js p)))
+(defn gen-key []
+  (gensym "key-"))
 
 ;; -------------------------
 ;; Estado
@@ -73,7 +70,7 @@
 (defn colunas-tabela []
   [:tr [:td "Produto"] [:td "Preco"] [:td "Data"] [:td "Local"]])
 
-(defn elemento [v]
+(defn elemento [v] ^{:key (gen-key)}
   [:tr 
    [:td (formata-aspas (:produto v))] 
    [:td (formata-reais (:preco v))] 
@@ -89,14 +86,16 @@
         #_(when-let [v (first (sort-by :preco @visao))]
           [:table  {:border 2}
            [:caption "Mais barato"]
-           (colunas-tabela)
-           (elemento v)])
+           [:tbody
+            (colunas-tabela)
+            (elemento v)]])
         (when (not (empty? @visao))
           [:table  {:border 2}
            [:caption "Histórico"]
-           (colunas-tabela)
-           (for [v @visao]
-             (elemento v))])]))))
+           [:tbody
+            (colunas-tabela)
+            (for [v @visao] ^{:key (gen-key)}
+                 (elemento v))]])]))))
 
 (defn debug []
   [:div [:label "DEBUG:"] 
@@ -116,7 +115,7 @@
    [:div
     [:input {:type :button :value "Cadastra" :on-click #(cadastra)}]
     [:input {:type :button :value "Consulta" :on-click #(consulta)}]
-    (for [p (distinct (map :produto @produtos))]
+    (for [p (distinct (map :produto @produtos))] ^{:key (gen-key)}
       [:input {:type :button :value p :on-click #(reset! cache-produto p)}])
     ]
    [:div [tabela]]
