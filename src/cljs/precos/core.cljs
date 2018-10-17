@@ -22,6 +22,13 @@
 (defonce cache-preco (atom ""))
 (defonce cache-local (atom ""))
 (defonce a-debug (atom ""))
+(defonce produtos-mercado 
+[
+{:produto "queijo" :comprar false}
+{:produto "arroz" :comprar true}
+{:produto "feijao" :comprar false}
+])
+(defonce mercado (atom produtos-mercado))
 
 ;; -------------------------
 ;; Funcoes
@@ -35,7 +42,6 @@
   p)
 (defn ->reais [p]
   (double p))
-
 (defn cadastra [] 
   (go 
     (let [p {:produto @cache-produto :preco @cache-preco :local @cache-local} 
@@ -51,6 +57,16 @@
                             (catch :default e
                               (reset! a-debug e))))]
       (reset! produtos (json->clj (:body response))))))
+
+(defn estilo-botao [p]
+  (if (:comprar p) {:background-color "#00FF00"}
+    {:background-color "#AA0000"}))
+(defn toggle-comprar [p]
+  (swap! mercado (fn [a] 
+                   (map (fn [i] (if (first (filter #(= (:produto i) (:produto p)) a)) 
+                                  (assoc i :comprar (not (:comprar i)))
+                                  i)) 
+                        a))))
 
 ;; -------------------------
 ;; Componentes
@@ -119,12 +135,16 @@
       [:input {:type :button :value p :on-click #(reset! cache-produto p)}])
     ]
    [:div [tabela]]
+   [:div [:a {:href "/lista-compras"} "Lista de compras"]]
    [:div [debug]]
    ])
 
-(defn about-page []
-  [:div [:h2 "About precos"]
-   [:div [:a {:href "/"} "go to the home page"]]])
+(defn lista-compras []
+  [:div [:h2 "Lista de Compras"]
+   (for [p @mercado]
+     [:div [:input {:style (estilo-botao p) :type :button :value (:produto p) 
+                    :on-click #(toggle-comprar p)} ]])  
+   [:div [:a {:href "/"} "Preços dos produtos"]]])
 
 ;; -------------------------
 ;; Routes
@@ -137,8 +157,8 @@
 (secretary/defroute "/" []
   (reset! page #'home-page))
 
-(secretary/defroute "/about" []
-  (reset! page #'about-page))
+(secretary/defroute "/lista-compras" []
+  (reset! page #'lista-compras))
 
 ;; -------------------------
 ;; Initialize app
