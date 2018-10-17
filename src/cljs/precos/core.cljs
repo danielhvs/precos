@@ -125,6 +125,8 @@
 ;; Views
 (defn home-page []
   [:div
+   [:div [:a ^{:key (gen-key)} {:href "/lista-compras"} "Lista de compras"]]
+   [:div [:h2 "Cadastro"]]
    [:div [:label "Produto"] (input-element "p" "p" "input" cache-produto identity) ]
    [:div [:label "Preco"] (input-element "v" "v" "input" cache-preco ->reais)]
    [:div [:label "Local"] (input-element "l" "l" "input" cache-local identity)]
@@ -135,16 +137,16 @@
       [:input {:type :button :value p :on-click #(reset! cache-produto p)}])
     ]
    [:div [tabela]]
-   [:div [:a {:href "/lista-compras"} "Lista de compras"]]
    [:div [debug]]
    ])
 
 (defn lista-compras []
-  [:div [:h2 "Lista de Compras"]
-   (for [p @mercado]
-     [:div [:input {:style (estilo-botao p) :type :button :value (:produto p) 
-                    :on-click #(toggle-comprar p)} ]])  
-   [:div [:a {:href "/"} "Preços dos produtos"]]])
+  [:div [:a {:href "/"} "Preços dos produtos"]
+   [:div [:h2 "Lista de Compras"]
+    (for [p @mercado] ^{:key (gen-key)}
+         [:div [:input {:style (estilo-botao p) :type :button :value (:produto p) 
+                        :on-click #(toggle-comprar p)} ]])  
+    ]])
 
 ;; -------------------------
 ;; Routes
