@@ -86,7 +86,7 @@
       (doall
        (reset! visao (filter #(= @cache-produto (:produto %)) @produtos))
        [:div
-        (when-let [v (first (sort-by :preco @visao))]
+        #_(when-let [v (first (sort-by :preco @visao))]
           [:table  {:border 2}
            [:caption "Mais barato"]
            (colunas-tabela)

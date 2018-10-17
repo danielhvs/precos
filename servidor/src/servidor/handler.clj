@@ -21,9 +21,8 @@
 (defn cadastra [request]
   (r/header
    (r/response
-    (dosync (let [p (slurp (:body request))]
-                     (println p)
-              (swap! produtos conj (json/read-str p))
+    (dosync (let [p (json/read-str (slurp (:body request)) :key-fn keyword)]
+              (swap! produtos conj p)
               (json/write-str (or (filtra-produto (:produto p)) {})))))
    "Access-Control-Allow-Origin" "*"
    ))
