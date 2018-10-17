@@ -13,12 +13,18 @@
   (filter (fn [p] (= nome (:produto p))) @produtos))
 
 (defn consulta [produto]
-  (json/write-str (or (filtra-produto produto) {})))
-
-(defn cadastra []
   (r/header
    (r/response
-    (json/write-str (or (filtra-produto "banana") {})))
+    (json/write-str (or (filtra-produto produto) {})))
+   "Access-Control-Allow-Origin" "*"))
+
+(defn cadastra [request]
+  (r/header
+   (r/response
+    (dosync (let [p (slurp (:body request))]
+                     (println p)
+              (swap! produtos conj (json/read-str p))
+              (json/write-str (or (filtra-produto (:produto p)) {})))))
    "Access-Control-Allow-Origin" "*"
    ))
 
@@ -34,7 +40,7 @@
 (defroutes app-routes
   (GET "/" [] "Hello World")
   (GET "/consulta/:produto" [produto] (consulta produto))
-  (POST "/cadastra" request (do (println request) (cadastra)))
+  (POST "/cadastra" request (do (println request) (cadastra request)))
   (OPTIONS "/cadastra" request (do (println request) (opcoes)))
   (route/not-found "Not Found"))
 

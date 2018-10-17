@@ -12,7 +12,7 @@
 
 ;; Parse json
 (def json "{\"foo\": \"1\", \"bar\": 2, \"baz\": [1,2,3]}")
-(def a (js->clj (.parse js/JSON json) :keywordize-keys true))
+(defn json->clj [json] (js->clj (.parse js/JSON json) :keywordize-keys true))
 
 
 
@@ -23,7 +23,7 @@
 (defonce produtos (atom []))
 (defonce cache-produto (atom ""))
 (defonce cache-preco (atom ""))
-(defonce cache-local (atom (str a)))
+(defonce cache-local (atom ""))
 (defonce a-debug (atom ""))
 
 ;; -------------------------
@@ -46,14 +46,14 @@
                             (catch :default e
                               (reset! a-debug e))))]
       (prn response)
-      (reset! a-debug (:body response)))))
+      (reset! produtos (json->clj (:body response))))))
 
 (defn consulta []
   (go
     (let [response (<! (try (http/get (str "http://localhost:3000/consulta/" @cache-produto) {:with-credentials? false})
                             (catch :default e
                               (reset! a-debug e))))]
-      (reset! produtos (:body response)))))
+      (reset! produtos (json->clj (:body response))))))
 
 ;; -------------------------
 ;; Componentes
