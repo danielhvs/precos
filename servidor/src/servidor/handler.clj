@@ -39,8 +39,8 @@
 (defroutes app-routes
   (GET "/" [] "Hello World")
   (GET "/consulta/:produto" [produto] (consulta produto))
-  (POST "/cadastra" request (do (println request) (cadastra request)))
-  (OPTIONS "/cadastra" request (do (println request) (opcoes)))
+  (POST "/cadastra" request (cadastra request))
+  (OPTIONS "/cadastra" request (opcoes))
   (route/not-found "Not Found"))
 
 (defn wrap-debug [handler]
