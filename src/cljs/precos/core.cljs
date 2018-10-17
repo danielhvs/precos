@@ -42,6 +42,14 @@
   p)
 (defn ->reais [p]
   (double p))
+
+(defn consulta-mercado []
+  (go
+    (let [response (<! (try (http/get "http://localhost:3000/consulta-mercado" {:with-credentials? false})
+                            (catch :default e
+                              (reset! a-debug e))))]
+      (reset! mercado (json->clj (:body response))))))
+
 (defn cadastra [] 
   (go 
     (let [p {:produto @cache-produto :preco @cache-preco :local @cache-local} 
@@ -142,11 +150,12 @@
 
 (defn lista-compras []
   [:div [:a {:href "/"} "Preços dos produtos"]
-   [:div [:h2 "Lista de Compras"]
+   [:div 
+    [:h2 "Lista de Compras"]
+    [:input {:type :button :value "Atualiza" :on-click #(consulta-mercado)}]
     (for [p @mercado] ^{:key (gen-key)}
          [:div [:input {:style (estilo-botao p) :type :button :value (:produto p) 
-                        :on-click #(toggle-comprar p)} ]])  
-    ]])
+                        :on-click #(toggle-comprar p)}]])]])
 
 ;; -------------------------
 ;; Routes

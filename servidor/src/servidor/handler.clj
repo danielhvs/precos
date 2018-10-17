@@ -12,6 +12,12 @@
 (defn filtra-produto [nome] 
   (filter (fn [p] (= nome (:produto p))) @produtos))
 
+(defn consulta-mercado []
+  (r/header
+   (r/response
+    (json/write-str (distinct (map (fn [i] {:produto (:produto i)}) @produtos))))
+   "Access-Control-Allow-Origin" "*"))
+
 (defn consulta [produto]
   (r/header
    (r/response
@@ -39,6 +45,7 @@
 (defroutes app-routes
   (GET "/" [] "Hello World")
   (GET "/consulta/:produto" [produto] (consulta produto))
+  (GET "/consulta-mercado" [] (consulta-mercado))
   (POST "/cadastra" request (cadastra request))
   (OPTIONS "/cadastra" request (opcoes))
   (route/not-found "Not Found"))
