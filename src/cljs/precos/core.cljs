@@ -42,7 +42,7 @@
 (defn cadastra [] 
   (go 
     (let [p {:produto @cache-produto :preco @cache-preco :local @cache-local} 
-          response (<! (try (http/post "http://localhost:3000/cadastra" {:json-params p :with-credentials? false})
+          response (<! (try (http/post "http://10.107.7.69:3000/cadastra" {:json-params p :with-credentials? false})
                             (catch :default e
                               (reset! a-debug e))))]
       (prn response)

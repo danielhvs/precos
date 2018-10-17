@@ -3,7 +3,9 @@
             [clojure.data.json :as json]
             [java-time :as t]
             [compojure.route :as route]
-            [ring.middleware.defaults :refer [wrap-defaults site-defaults]]))
+            [ring.util.response :as r]
+            [ring.middleware.cors :refer [wrap-cors]]
+            [ring.middleware.defaults :refer [wrap-defaults api-defaults]]))
 
 (def produtos (atom [{:produto "banana" :preco 5.55 :local "bistek" :data (str (t/local-date))} {:produto "banana" :preco 2.43 :local "angeloni" :data (str (t/local-date))}]))
 
@@ -14,13 +16,39 @@
   (json/write-str (or (filtra-produto produto) {})))
 
 (defn cadastra []
-  (json/write-str (or (filtra-produto "banana") {})))
+  (r/header
+   (r/response
+    (json/write-str (or (filtra-produto "banana") {})))
+   "Access-Control-Allow-Origin" "*"
+   ))
+
+(defn opcoes []
+  (r/header 
+   (r/header
+    (r/header
+     (r/header (r/response "") "Access-Control-Allow-Origin" "*")
+     "Allow" "POST")
+    "Access-Control-Allow-Methods" "POST")
+   "Access-Control-Allow-Headers" "content-type"))
 
 (defroutes app-routes
   (GET "/" [] "Hello World")
   (GET "/consulta/:produto" [produto] (consulta produto))
-  (POST "/cadastra" [] (cadastra))
+  (POST "/cadastra" request (do (println request) (cadastra)))
+  (OPTIONS "/cadastra" request (do (println request) (opcoes)))
   (route/not-found "Not Found"))
 
+(defn wrap-debug [handler]
+  (fn [request]
+    (do
+      (println "REQUEST: " request)
+      (let [response (handler request)]
+        (do (println "RESPONSE: " response)
+            response))
+)))
+
 (def app
-  (wrap-defaults app-routes site-defaults))
+  (wrap-debug
+   (wrap-cors 
+    (wrap-defaults app-routes api-defaults) 
+    :access-control-allow-origin [#".*"])))
