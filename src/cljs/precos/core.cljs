@@ -8,8 +8,6 @@
             [cljs.core.async :refer [<!]]
             [accountant.core :as accountant]))
 
-(enable-console-print!)
-
 ;; Parse json
 (defn json->clj [json] (js->clj (.parse js/JSON json) :keywordize-keys true))
 (defn gen-key []
@@ -50,6 +48,7 @@
     (let [response (<! (try (http/get "http://localhost:3000/consulta-mercado" {:with-credentials? false})
                             (catch :default e
                               (reset! a-debug e))))]
+      (reset! resposta "Atualizado")
       (reset! mercado (json->clj (:body response))))))
 
 (defn cadastra [] 
@@ -58,7 +57,7 @@
           response (<! (try (http/post "http://10.107.7.69:3000/cadastra" {:json-params p :with-credentials? false})
                             (catch :default e
                               (reset! a-debug e))))]
-      (prn response)
+      (consulta-mercado)
       (reset! produtos (json->clj (:body response))))))
 
 (defn consulta []
@@ -107,7 +106,7 @@
   (let [visao (atom []) ]
     (fn []
       (doall
-       (reset! visao (filter #(= @cache-produto (:produto %)) @produtos))
+       (reset! visao @produtos)
        [:div
         #_(when-let [v (first (sort-by :preco @visao))]
           [:table  {:border 2}
@@ -124,12 +123,7 @@
                  (elemento v))]])]))))
 
 (defn debug []
-  [:div [:label "DEBUG:"] 
-   #_[:div [:label (str "produto: " @cache-produto)]] 
-   #_[:div [:label (str "preco: " @cache-preco)]]
-   #_[:div [:label (str "produtos: " @produtos)]]
-   [:div [:label (str @a-debug)]]
-])
+  [:div [:label (str @a-debug)]])
 
 ;; -------------------------
 ;; Views
@@ -140,12 +134,12 @@
    [:div [:label "Produto"] (input-element "p" "p" "input" cache-produto identity) ]
    [:div [:label "Preco"] (input-element "v" "v" "input" cache-preco ->reais)]
    [:div [:label "Local"] (input-element "l" "l" "input" cache-local identity)]
+   [:input {:type :button :value "Cadastra" :on-click #(cadastra)}]
    [:div
-    [:input {:type :button :value "Cadastra" :on-click #(cadastra)}]
-    [:input {:type :button :value "Consulta" :on-click #(consulta)}]
-    (for [p (distinct (map :produto @produtos))] ^{:key (gen-key)}
-      [:input {:type :button :value p :on-click #(reset! cache-produto p)}])
-    ]
+    (for [p (distinct (map :produto @mercado))] ^{:key (gen-key)}
+         [:input {:type :button :value p :on-click #(do 
+                                                      (reset! cache-produto p)
+                                                      (consulta))}])]
    [:div [tabela]]
    [:div [debug]]
    ])
@@ -191,3 +185,6 @@
        (secretary/locate-route path))})
   (accountant/dispatch-current!)
   (mount-root))
+
+(enable-console-print!)
+(consulta-mercado)
