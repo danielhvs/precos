@@ -23,6 +23,7 @@
 (defonce cache-local (atom ""))
 (defonce a-debug (atom ""))
 (defonce mercado (atom #{}))
+(defonce resposta (atom ""))
 
 ;; -------------------------
 ;; Funcoes
@@ -36,6 +37,13 @@
   p)
 (defn ->reais [p]
   (double p))
+
+(defn salva-mercado []
+  (go
+    (let [response (<! (try (http/post "http://localhost:3000/salva-mercado" {:json-params @mercado :with-credentials? false})
+                            (catch :default e
+                              (reset! a-debug e))))]
+      (reset! resposta (:body response)))))
 
 (defn consulta-mercado []
   (go
@@ -147,6 +155,8 @@
    [:div 
     [:h2 "Lista de Compras"]
     [:input {:type :button :value "Atualiza" :on-click #(consulta-mercado)}]
+    [:input {:type :button :value "Salva" :on-click #(salva-mercado)}]
+    [:label @resposta]
     (for [p @mercado] ^{:key (gen-key)}
          [:div [:input {:style (estilo-botao p) :type :button :value (:produto p) 
                         :on-click #(toggle-comprar p)}]])]])

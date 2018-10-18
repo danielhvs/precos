@@ -21,13 +21,19 @@
   (-> (r/response (json/write-str (or (filtra-produto produto @produtos) {})))
       (r/header "Access-Control-Allow-Origin" "*")))
 
+(defn salva-mercado [request]
+  (-> (r/response
+       (dosync (let [m (json/read-str (slurp (:body request)) :key-fn keyword)]
+                 (reset! mercado m)
+                 "Salvo com sucesso")))
+      (r/header "Access-Control-Allow-Origin" "*")))
+
 (defn cadastra [request]
   (-> (r/response
        (dosync (let [p (json/read-str (slurp (:body request)) :key-fn keyword)]
                  (swap! produtos conj p)
                  (when-not (some #(= (:produto p) %) (map :produto @mercado)) (swap! mercado conj {:produto (:produto p) :comprar true}))
                  (json/write-str (or (filtra-produto (:produto p) @produtos) {})))))
-      
       (r/header "Access-Control-Allow-Origin" "*")))
 
 (defn opcoes []
@@ -42,7 +48,9 @@
   (GET "/consulta/:produto" [produto] (consulta produto))
   (GET "/consulta-mercado" [] (consulta-mercado))
   (POST "/cadastra" request (cadastra request))
+  (POST "/salva-mercado" request (salva-mercado request))
   (OPTIONS "/cadastra" request (opcoes))
+  (OPTIONS "/salva-mercado" request (opcoes))
   (route/not-found "Not Found"))
 
 (defn wrap-debug [handler]
