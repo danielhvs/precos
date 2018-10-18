@@ -22,6 +22,7 @@
 (defonce a-debug (atom ""))
 (defonce mercado (atom #{}))
 (defonce resposta (atom ""))
+(defonce servidor "http://10.107.7.69:3000/")
 
 ;; -------------------------
 ;; Funcoes
@@ -35,17 +36,19 @@
   p)
 (defn ->reais [p]
   (double p))
+(defn operacao [op] 
+  (str servidor op))
 
 (defn salva-mercado []
   (go
-    (let [response (<! (try (http/post "http://localhost:3000/salva-mercado" {:json-params @mercado :with-credentials? false})
+    (let [response (<! (try (http/post (operacao "salva-mercado") {:json-params @mercado :with-credentials? false})
                             (catch :default e
                               (reset! a-debug e))))]
       (reset! resposta (:body response)))))
 
 (defn consulta-mercado []
   (go
-    (let [response (<! (try (http/get "http://localhost:3000/consulta-mercado" {:with-credentials? false})
+    (let [response (<! (try (http/get (operacao "consulta-mercado") {:with-credentials? false})
                             (catch :default e
                               (reset! a-debug e))))]
       (reset! resposta "Atualizado")
@@ -54,7 +57,7 @@
 (defn cadastra [] 
   (go 
     (let [p {:produto @cache-produto :preco @cache-preco :local @cache-local} 
-          response (<! (try (http/post "http://10.107.7.69:3000/cadastra" {:json-params p :with-credentials? false})
+          response (<! (try (http/post (operacao "cadastra") {:json-params p :with-credentials? false})
                             (catch :default e
                               (reset! a-debug e))))]
       (consulta-mercado)
@@ -62,7 +65,7 @@
 
 (defn consulta []
   (go
-    (let [response (<! (try (http/get (str "http://localhost:3000/consulta/" @cache-produto) {:with-credentials? false})
+    (let [response (<! (try (http/get (operacao (str "consulta/" @cache-produto)) {:with-credentials? false})
                             (catch :default e
                               (reset! a-debug e))))]
       (reset! produtos (json->clj (:body response))))))
