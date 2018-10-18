@@ -31,7 +31,7 @@
 (defn cadastra [request]
   (-> (r/response
        (dosync (let [p (json/read-str (slurp (:body request)) :key-fn keyword)]
-                 (swap! produtos conj p)
+                 (swap! produtos conj (assoc p :data (str (t/local-date))))
                  (when-not (some #(= (:produto p) %) (map :produto @mercado)) (swap! mercado conj {:produto (:produto p) :comprar true}))
                  (json/write-str (or (filtra-produto (:produto p) @produtos) {})))))
       (r/header "Access-Control-Allow-Origin" "*")))
