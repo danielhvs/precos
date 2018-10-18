@@ -14,35 +14,28 @@
   (filter (fn [p] (= nome (:produto p))) colecao))
 
 (defn consulta-mercado []
-  (r/header
-   (r/response
-    (json/write-str @mercado))
-   "Access-Control-Allow-Origin" "*"))
+  (-> (r/response (json/write-str @mercado))
+      (r/header  "Access-Control-Allow-Origin" "*")))
 
 (defn consulta [produto]
-  (r/header
-   (r/response
-    (json/write-str (or (filtra-produto produto @produtos) {})))
-   "Access-Control-Allow-Origin" "*"))
+  (-> (r/response (json/write-str (or (filtra-produto produto @produtos) {})))
+      (r/header "Access-Control-Allow-Origin" "*")))
 
 (defn cadastra [request]
-  (r/header
-   (r/response
-    (dosync (let [p (json/read-str (slurp (:body request)) :key-fn keyword)]
-              (swap! produtos conj p)
-              (when-not (some #(= (:produto p) %) (map :produto @mercado)) (swap! mercado conj {:produto (:produto p) :comprar true}))
-              (json/write-str (or (filtra-produto (:produto p) @produtos) {})))))
-   "Access-Control-Allow-Origin" "*"
-   ))
+  (-> (r/response
+       (dosync (let [p (json/read-str (slurp (:body request)) :key-fn keyword)]
+                 (swap! produtos conj p)
+                 (when-not (some #(= (:produto p) %) (map :produto @mercado)) (swap! mercado conj {:produto (:produto p) :comprar true}))
+                 (json/write-str (or (filtra-produto (:produto p) @produtos) {})))))
+      
+      (r/header "Access-Control-Allow-Origin" "*")))
 
 (defn opcoes []
-  (r/header 
-   (r/header
-    (r/header
-     (r/header (r/response "") "Access-Control-Allow-Origin" "*")
-     "Allow" "POST")
-    "Access-Control-Allow-Methods" "POST")
-   "Access-Control-Allow-Headers" "content-type"))
+  (-> (r/response "")
+      (r/header "Access-Control-Allow-Origin" "*")
+      (r/header "Allow" "POST")
+      (r/header "Access-Control-Allow-Methods" "POST")
+      (r/header "Access-Control-Allow-Headers" "content-type")))
 
 (defroutes app-routes
   (GET "/" [] "Hello World")
