@@ -135,11 +135,13 @@
    [:div [:label "Preco"] (input-element "v" "v" "input" cache-preco ->reais)]
    [:div [:label "Local"] (input-element "l" "l" "input" cache-local identity)]
    [:input {:type :button :value "Cadastra" :on-click #(cadastra)}]
+   [:div [:label "Produtos"]]
    [:div
     (for [p (distinct (map :produto @mercado))] ^{:key (gen-key)}
          [:input {:type :button :value p :on-click #(do 
                                                       (reset! cache-produto p)
                                                       (consulta))}])]
+   [:div [:label "Locais"]]
    [:div
     (for [p (distinct (map :local @produtos))] ^{:key (gen-key)}
          [:input {:type :button :value p :on-click #(reset! cache-local p)}])]
