@@ -7,8 +7,8 @@
             [ring.middleware.cors :refer [wrap-cors]]
             [ring.middleware.defaults :refer [wrap-defaults api-defaults]]))
 
-(def produtos (atom [{:produto "banana" :preco 5.55 :local "bistek" :data (str (t/local-date))} {:produto "banana" :preco 2.43 :local "angeloni" :data (str (t/local-date))}]))
-(def mercado (atom #{{:produto "banana" :comprar true}}))
+(def produtos (atom []))
+(def mercado (atom #{}))
 
 (defn filtra-produto [nome colecao] 
   (filter (fn [p] (= nome (:produto p))) colecao))
