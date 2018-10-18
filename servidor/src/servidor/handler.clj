@@ -8,20 +8,21 @@
             [ring.middleware.defaults :refer [wrap-defaults api-defaults]]))
 
 (def produtos (atom [{:produto "banana" :preco 5.55 :local "bistek" :data (str (t/local-date))} {:produto "banana" :preco 2.43 :local "angeloni" :data (str (t/local-date))}]))
+(def mercado (atom #{{:produto "banana" :comprar true}}))
 
-(defn filtra-produto [nome] 
-  (filter (fn [p] (= nome (:produto p))) @produtos))
+(defn filtra-produto [nome colecao] 
+  (filter (fn [p] (= nome (:produto p))) colecao))
 
 (defn consulta-mercado []
   (r/header
    (r/response
-    (json/write-str (distinct (map (fn [i] {:produto (:produto i)}) @produtos))))
+    (json/write-str @mercado))
    "Access-Control-Allow-Origin" "*"))
 
 (defn consulta [produto]
   (r/header
    (r/response
-    (json/write-str (or (filtra-produto produto) {})))
+    (json/write-str (or (filtra-produto produto @produtos) {})))
    "Access-Control-Allow-Origin" "*"))
 
 (defn cadastra [request]
@@ -29,7 +30,8 @@
    (r/response
     (dosync (let [p (json/read-str (slurp (:body request)) :key-fn keyword)]
               (swap! produtos conj p)
-              (json/write-str (or (filtra-produto (:produto p)) {})))))
+              (when-not (some #(= (:produto p) %) (map :produto @mercado)) (swap! mercado conj {:produto (:produto p) :comprar true}))
+              (json/write-str (or (filtra-produto (:produto p) @produtos) {})))))
    "Access-Control-Allow-Origin" "*"
    ))
 

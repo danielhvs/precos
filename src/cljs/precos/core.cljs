@@ -22,13 +22,7 @@
 (defonce cache-preco (atom ""))
 (defonce cache-local (atom ""))
 (defonce a-debug (atom ""))
-(defonce produtos-mercado 
-[
-{:produto "queijo" :comprar false}
-{:produto "arroz" :comprar true}
-{:produto "feijao" :comprar false}
-])
-(defonce mercado (atom produtos-mercado))
+(defonce mercado (atom #{}))
 
 ;; -------------------------
 ;; Funcoes
