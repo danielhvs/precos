@@ -140,6 +140,9 @@
          [:input {:type :button :value p :on-click #(do 
                                                       (reset! cache-produto p)
                                                       (consulta))}])]
+   [:div
+    (for [p (distinct (map :local @produtos))] ^{:key (gen-key)}
+         [:input {:type :button :value p :on-click #(reset! cache-local p)}])]
    [:div [tabela]]
    [:div [debug]]
    ])
