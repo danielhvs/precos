@@ -49,7 +49,7 @@
                             (catch :default e
                               (reset! a-debug e))))]
       (reset! resposta "Atualizado")
-      (reset! mercado (json->clj (:body response))))))
+      (reset! mercado (reverse (sort-by :comprar (json->clj (:body response))))))))
 
 (defn cadastra [] 
   (go 
