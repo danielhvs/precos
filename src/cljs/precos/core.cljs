@@ -22,7 +22,7 @@
 (defonce a-debug (atom ""))
 (defonce mercado (atom #{}))
 (defonce resposta (atom ""))
-(defonce servidor "https://infinite-crag-89428.herokuapp.com:3000/")
+(defonce servidor "https://infinite-crag-89428.herokuapp.com/")
 
 ;; -------------------------
 ;; Funcoes
