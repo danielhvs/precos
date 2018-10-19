@@ -1,8 +1,10 @@
 (ns servidor.handler
   (:require [compojure.core :refer :all]
+            [compojure.handler :refer [site]]
             [clojure.data.json :as json]
             [java-time :as t]
             [compojure.route :as route]
+            [ring.adapter.jetty :as jetty]
             [ring.util.response :as r]
             [ring.middleware.cors :refer [wrap-cors]]
             [ring.middleware.defaults :refer [wrap-defaults api-defaults]]))
@@ -67,3 +69,8 @@
    (wrap-cors 
     (wrap-defaults app-routes api-defaults) 
     :access-control-allow-origin [#".*"])))
+
+
+(defn -main [& [port]]
+  (let [port 3000]
+    (jetty/run-jetty (site #'app) {:port port :join? false})))

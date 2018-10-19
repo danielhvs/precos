@@ -7,9 +7,16 @@
                  [ring-cors "0.1.12"]
                  [clojure.java-time "0.3.2"]
                  [org.clojure/data.json "0.2.6"]
+                 [ring/ring-jetty-adapter "1.4.0"]
                  [ring/ring-defaults "0.3.2"]]
-  :plugins [[lein-ring "0.12.4"]]
+  :plugins [[environ/environ.lein "0.3.1"][lein-ring "0.12.4"]]
+  :hooks [environ.leiningen.hooks]
+  :uberjar-name "servidor-0.1.0-SNAPSHOT-standalone.jar"
   :ring {:handler servidor.handler/app}
   :profiles
-  {:dev {:dependencies [[javax.servlet/servlet-api "2.5"]
+  {:production {:env {:production true}} 
+   :dev {:dependencies [[javax.servlet/servlet-api "2.5"]
                         [ring/ring-mock "0.3.2"]]}})
+
+
+
