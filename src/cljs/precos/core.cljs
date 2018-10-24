@@ -22,6 +22,7 @@
 (defonce a-debug (atom ""))
 (defonce mercado (atom #{}))
 (defonce resposta (atom ""))
+(defonce resposta-cadastro (atom ""))
 (defonce servidor "https://infinite-crag-89428.herokuapp.com/")
 
 ;; -------------------------
@@ -54,21 +55,23 @@
       (reset! resposta "Atualizado")
       (reset! mercado (reverse (sort-by :comprar (json->clj (:body response))))))))
 
-(defn cadastra [] 
-  (go 
-    (let [p {:produto @cache-produto :preco @cache-preco :local @cache-local} 
-          response (<! (try (http/post (operacao "cadastra") {:json-params p :with-credentials? false})
-                            (catch :default e
-                              (reset! a-debug e))))]
-      (consulta-mercado)
-      (reset! produtos (json->clj (:body response))))))
-
 (defn consulta []
   (go
     (let [response (<! (try (http/get (operacao (str "consulta/" @cache-produto)) {:with-credentials? false})
                             (catch :default e
                               (reset! a-debug e))))]
       (reset! produtos (json->clj (:body response))))))
+
+(defn cadastra [] 
+  (go 
+    (let [p {:produto @cache-produto :preco @cache-preco :local @cache-local} 
+          response (<! (try (http/post (operacao "cadastra") {:json-params p :with-credentials? false})
+                            (catch :default e
+                              (reset! a-debug e))))]
+      (let [{:keys [produto local preco]} (json->clj (:body response))]
+        (reset! resposta-cadastro (str "Sucesso cadastro do produto '" produto "' por " (formata-reais preco) " em '" local "'"))
+        (consulta)
+        (consulta-mercado)))))
 
 (defn estilo-botao [p]
   (if (:comprar p) {:background-color "#00FF00"}
@@ -92,7 +95,6 @@
            :required ""
            :value @value
            :on-change #(reset! value (f (-> % .-target .-value)))}])
-
 
 ;; TODO: colunas serem as chaves dos mapas
 (defn colunas-tabela []
@@ -148,6 +150,7 @@
    [:div
     (for [p (distinct (map :local @produtos))] ^{:key (gen-key)}
          [:input {:type :button :value p :on-click #(reset! cache-local p)}])]
+   [:div [:label @resposta-cadastro]]
    [:div [tabela]]
    [:div [debug]]
    ])
