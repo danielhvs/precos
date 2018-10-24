@@ -45,14 +45,13 @@
     (let [response (<! (try (http/post (operacao "salva-mercado") {:json-params @mercado :with-credentials? false})
                             (catch :default e
                               (reset! a-debug e))))]
-      (reset! resposta (:body response)))))
+      (reset! mercado (reverse (sort-by :comprar (json->clj (:body response))))))))
 
 (defn consulta-mercado []
   (go
     (let [response (<! (try (http/get (operacao "consulta-mercado") {:with-credentials? false})
                             (catch :default e
                               (reset! a-debug e))))]
-      (reset! resposta "Atualizado")
       (reset! mercado (reverse (sort-by :comprar (json->clj (:body response))))))))
 
 (defn consulta []
@@ -159,7 +158,6 @@
   [:div [:a {:href "/"} "Preços dos produtos"]
    [:div 
     [:h2 "Lista de Compras"]
-    [:input {:type :button :value "Atualiza" :on-click #(consulta-mercado)}]
     [:input {:type :button :value "Salva" :on-click #(salva-mercado)}]
     [:label @resposta]
     (for [p @mercado] ^{:key (gen-key)}
