@@ -42,34 +42,34 @@
   (str servidor op))
 
 (defn salva-mercado []
-  (reset! resposta-mercado "...")
+  (reset! resposta-mercado "Salvando lista de mercado...")
   (go
     (let [response (<! (try (http/post (operacao "salva-mercado") {:json-params @mercado :with-credentials? false})
                             (catch :default e
                               (reset! a-debug e))))]
       (reset! mercado (reverse (sort-by :comprar (json->clj (:body response)))))
-      (reset! resposta-mercado "Salvo"))))
+      (reset! resposta-mercado ""))))
 
 (defn consulta-mercado []
-  (reset! resposta-mercado "...")
+  (reset! resposta-mercado "Consultando lista de mercado...")
   (go
     (let [response (<! (try (http/get (operacao "consulta-mercado") {:with-credentials? false})
                             (catch :default e
                               (reset! a-debug e))))]
       (reset! mercado (reverse (sort-by :comprar (json->clj (:body response)))))
-      (reset! resposta-mercado "Salvo"))))
+      (reset! resposta-mercado ""))))
 
 (defn consulta []
-  (reset! resposta-cadastro "...")
+  (reset! resposta-cadastro (str "Consultando " @cache-produto "..."))
   (go
     (let [response (<! (try (http/get (operacao (str "consulta/" @cache-produto)) {:with-credentials? false})
                             (catch :default e
                               (reset! a-debug e))))]
       (reset! produtos (json->clj (:body response)))
-      (reset! resposta-cadastro (str "Sucesso " (formata-aspas @cache-produto))))))
+      (reset! resposta-cadastro ""))))
 
 (defn cadastra [] 
-  (reset! resposta-cadastro "...")
+  (reset! resposta-cadastro (str "Cadastrando " @cache-produto "..."))
   (go 
     (let [p {:produto @cache-produto :preco @cache-preco :local @cache-local} 
           response (<! (try (http/post (operacao "cadastra") {:json-params p :with-credentials? false})
@@ -145,7 +145,7 @@
    [:div [:label "Preco"] (input-element "v" "v" "input" cache-preco ->reais)]
    [:div [:label "Local"] (input-element "l" "l" "input" cache-local identity)]
    [:input {:type :button :value "Cadastra" :on-click #(cadastra)}]
-   [:div [:label "Produtos"]]
+   [:div [:label (str "Produtos " @resposta-mercado)]]
    [:div
     (for [p (distinct (map :produto @mercado))] ^{:key (gen-key)}
          [:input {:type :button :value p :on-click #(do 
