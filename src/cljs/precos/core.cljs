@@ -51,18 +51,22 @@
       (reset! resposta-mercado "Salvo"))))
 
 (defn consulta-mercado []
+  (reset! resposta-mercado "...")
   (go
     (let [response (<! (try (http/get (operacao "consulta-mercado") {:with-credentials? false})
                             (catch :default e
                               (reset! a-debug e))))]
-      (reset! mercado (reverse (sort-by :comprar (json->clj (:body response))))))))
+      (reset! mercado (reverse (sort-by :comprar (json->clj (:body response)))))
+      (reset! resposta-mercado "Salvo"))))
 
 (defn consulta []
+  (reset! resposta-cadastro "...")
   (go
     (let [response (<! (try (http/get (operacao (str "consulta/" @cache-produto)) {:with-credentials? false})
                             (catch :default e
                               (reset! a-debug e))))]
-      (reset! produtos (json->clj (:body response))))))
+      (reset! produtos (json->clj (:body response)))
+      (reset! resposta-cadastro (str "Sucesso " (formata-aspas @cache-produto))))))
 
 (defn cadastra [] 
   (reset! resposta-cadastro "...")
@@ -71,10 +75,8 @@
           response (<! (try (http/post (operacao "cadastra") {:json-params p :with-credentials? false})
                             (catch :default e
                               (reset! a-debug e))))]
-      (let [{:keys [produto local preco]} (json->clj (:body response))]
-        (reset! resposta-cadastro (str "Sucesso cadastro do produto '" produto "' por " (formata-reais preco) " em '" local "'"))
-        (consulta)
-        (consulta-mercado)))))
+      (consulta)
+      (consulta-mercado))))
 
 (defn estilo-botao [p]
   (if (:comprar p) {:background-color "#00FF00"}
