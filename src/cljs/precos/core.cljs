@@ -23,6 +23,7 @@
 (defonce mercado (atom #{}))
 (defonce resposta (atom ""))
 (defonce resposta-cadastro (atom ""))
+(defonce resposta-mercado (atom ""))
 (defonce servidor "https://infinite-crag-89428.herokuapp.com/")
 
 ;; -------------------------
@@ -41,11 +42,13 @@
   (str servidor op))
 
 (defn salva-mercado []
+  (reset! resposta-mercado "...")
   (go
     (let [response (<! (try (http/post (operacao "salva-mercado") {:json-params @mercado :with-credentials? false})
                             (catch :default e
                               (reset! a-debug e))))]
-      (reset! mercado (reverse (sort-by :comprar (json->clj (:body response))))))))
+      (reset! mercado (reverse (sort-by :comprar (json->clj (:body response)))))
+      (reset! resposta-mercado "Salvo"))))
 
 (defn consulta-mercado []
   (go
@@ -160,6 +163,7 @@
    [:div 
     [:h2 "Lista de Compras"]
     [:input {:type :button :value "Salva" :on-click #(salva-mercado)}]
+    [:div [:label @resposta-mercado]]
     [:label @resposta]
     (for [p @mercado] ^{:key (gen-key)}
          [:div [:input {:style (estilo-botao p) :type :button :value (:produto p) 
