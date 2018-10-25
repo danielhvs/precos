@@ -62,6 +62,7 @@
       (reset! produtos (json->clj (:body response))))))
 
 (defn cadastra [] 
+  (reset! resposta-cadastro "...")
   (go 
     (let [p {:produto @cache-produto :preco @cache-preco :local @cache-local} 
           response (<! (try (http/post (operacao "cadastra") {:json-params p :with-credentials? false})
