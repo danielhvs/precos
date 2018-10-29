@@ -78,9 +78,11 @@
       (consulta)
       (consulta-mercado))))
 
-(defn estilo-botao [p]
-  (if (:comprar p) {:background-color "#00FF00"}
-    {:background-color "#AA0000"}))
+(defn estilo-compra [p]
+  (if (:comprar p) 
+    {:text-align "center" :background-color "#00FF00" :color "black"}
+    {:text-align "center" :background-color "#AA0000" :color "white"}))
+
 (defn toggle-comprar [p]
   (swap! mercado (fn [a] 
                    (map (fn [i] (if (first (filter #(= (:produto i) (:produto p)) a)) 
@@ -160,6 +162,34 @@
    [:div [debug]]
    ])
 
+
+(defn estilo-header-tabela []
+  {:style {:text-align "center"}})
+
+(defn colunas-tabela-compras []
+  [:tr 
+   [:td (estilo-header-tabela) "Produto"] 
+   [:td (estilo-header-tabela) "Estoque"]])
+
+(defn botao-compra [p]
+  [:input {:style (estilo-compra p) :value (:produto p) 
+           :on-click #(toggle-comprar p)}])
+
+(defn elemento-compras [p] ^{:key (gen-key)}
+  [:tr 
+   [:td (botao-compra p)] 
+   [:td (formata-aspas (:comprar p))]])
+
+(defn tabela-compras []
+  (fn []
+    [:div
+     [:table  {:border 0}
+      [:caption "Lista de compras"]
+      [:tbody
+       (colunas-tabela-compras)
+       (for [p @mercado] ^{:key (gen-key)}
+            (elemento-compras p))]]]))
+
 (defn lista-compras []
   [:div [:a {:href "/"} "Preços dos produtos"]
    [:div 
@@ -167,9 +197,7 @@
     [:input {:type :button :value "Salva" :on-click #(salva-mercado)}]
     [:div [:label @resposta-mercado]]
     [:label @resposta]
-    (for [p @mercado] ^{:key (gen-key)}
-         [:div [:input {:style (estilo-botao p) :type :button :value (:produto p) 
-                        :on-click #(toggle-comprar p)}]])]])
+    [tabela-compras]]]) 
 
 ;; -------------------------
 ;; Routes
