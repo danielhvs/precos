@@ -115,7 +115,7 @@
    [:td (formata-aspas (:local v))]])
 
 (defn tabela []
-  (let [visao (atom []) ]
+  (let [visao (atom [])]
     (fn []
       (doall
        (reset! visao @produtos)
@@ -175,10 +175,30 @@
   [:input {:style (estilo-compra p) :value (:produto p) 
            :on-click #(toggle-comprar p)}])
 
+(defn update-estoque [p e]
+  (swap! mercado (fn [a] 
+                   (map (fn [i] (if (first (filter #(= (:produto i) (:produto p)) a)) 
+                                  (assoc i :estoque e)
+                                  i)) 
+                        a)))
+  (:estoque
+   (first (filter #(= (:produto p) (:produto %)) @mercado))))
+
+(defn entrada-estoque [p]
+  (let [valor (atom [])]
+    (fn []
+      [:input {:id "id"
+               :name "nome"
+               :class "form-control"
+               :type "input"
+               :required ""
+               :value @valor
+               :on-change #(reset! valor (-> % .-target .-value))}])))
+
 (defn elemento-compras [p] ^{:key (gen-key)}
   [:tr 
    [:td (botao-compra p)] 
-   [:td (formata-aspas (:comprar p))]])
+   [:td [entrada-estoque p]]])
 
 (defn tabela-compras []
   (fn []
