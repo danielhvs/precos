@@ -24,8 +24,8 @@
 (defonce resposta (atom ""))
 (defonce resposta-cadastro (atom ""))
 (defonce resposta-mercado (atom ""))
-;(defonce servidor "https://infinite-crag-89428.herokuapp.com/")
-(defonce servidor "http://localhost:3000/")
+(defonce servidor "https://infinite-crag-89428.herokuapp.com/")
+;(defonce servidor "http://localhost:3000/")
 
 
 ; Feio mas funciona
