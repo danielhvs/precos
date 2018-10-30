@@ -30,7 +30,13 @@
 
 ; Feio mas funciona
 (def eventos 
-  {:update-estoque (fn [{:keys [produto comprar estoque]}]
+  {:toggle-comprar (fn [{:keys [produto comprar estoque]}]
+                     (swap! mercado (fn [a] 
+                                      (map (fn [i] (if (first (filter #(= (:produto i) produto) a)) 
+                                                     (assoc i :comprar (not (:comprar i)))
+                                                     i)) 
+                                           a))))
+   :update-estoque (fn [{:keys [produto comprar estoque]}]
                      (swap! mercado (fn [a] 
                                       (map (fn [i] (if (first (filter #(= (:produto i) produto) a)) 
                                                      (assoc i :estoque estoque)
@@ -100,13 +106,6 @@
   (if (:comprar p) 
     {:text-align "center" :background-color "#00FF00" :color "black"}
     {:text-align "center" :background-color "#AA0000" :color "white"}))
-
-(defn toggle-comprar [p]
-  (swap! mercado (fn [a] 
-                   (map (fn [i] (if (first (filter #(= (:produto i) (:produto p)) a)) 
-                                  (assoc i :comprar (not (:comprar i)))
-                                  i)) 
-                        a))))
 
 ;; -------------------------
 ;; Componentes
@@ -190,15 +189,9 @@
    [:td (estilo-header-tabela) "Estoque"]])
 
 (defn botao-compra [p]
-  [:input {:style (estilo-compra p) :value (:produto p) 
-           :on-click #(toggle-comprar p)}])
-
-(defn update-estoque [p e]
-  (swap! mercado (fn [a] 
-                   (map (fn [i] (if (first (filter #(= (:produto i) (:produto p)) a)) 
-                                  (assoc i :estoque e)
-                                  i)) 
-                        a))))
+  [:input {:style (estilo-compra p) 
+           :value (:produto p) 
+           :on-click #(put! canal-eventos [:toggle-comprar p])}])
 
 (defn entrada-estoque [p]
   [:input {:id "id"
