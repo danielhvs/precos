@@ -30,15 +30,16 @@
 
 ; Feio mas funciona
 (def eventos 
-  {:toggle-comprar (fn [{:keys [produto comprar estoque]}]
+  {:debug (fn [p] (prn p))
+   :toggle-comprar (fn [{:keys [nome comprar estoque]}]
                      (swap! mercado (fn [a] 
-                                      (map (fn [i] (if (first (filter #(= (:produto i) produto) a)) 
+                                      (map (fn [i] (if (first (filter #(= (:nome i) nome) a)) 
                                                      (assoc i :comprar (not (:comprar i)))
                                                      i)) 
                                            a))))
-   :update-estoque (fn [{:keys [produto comprar estoque]}]
+   :update-estoque (fn [{:keys [nome comprar estoque]}]
                      (swap! mercado (fn [a] 
-                                      (map (fn [i] (if (first (filter #(= (:produto i) produto) a)) 
+                                      (map (fn [i] (if (first (filter #(= (:nome i) nome) a)) 
                                                      (assoc i :estoque estoque)
                                                      i)) 
                                            a))))})
@@ -95,7 +96,7 @@
 (defn cadastra [] 
   (reset! resposta-cadastro (str "Cadastrando " @cache-produto "..."))
   (go 
-    (let [p {:produto @cache-produto :preco @cache-preco :local @cache-local} 
+    (let [p {:nome @cache-produto :preco @cache-preco :local @cache-local} 
           response (<! (try (http/post (operacao "cadastra") {:json-params p :with-credentials? false})
                             (catch :default e
                               (reset! a-debug e))))]
@@ -120,13 +121,12 @@
            :value @value
            :on-change #(reset! value (f (-> % .-target .-value)))}])
 
-;; TODO: colunas serem as chaves dos mapas
 (defn colunas-tabela []
   [:tr [:td "Produto"] [:td "Preco"] [:td "Data"] [:td "Local"]])
 
 (defn elemento [v] ^{:key (gen-key)}
   [:tr 
-   [:td (formata-aspas (:produto v))] 
+   [:td (formata-aspas (:nome v))] 
    [:td (formata-reais (:preco v))] 
    [:td (formata-data (:data v))] 
    [:td (formata-aspas (:local v))]])
@@ -166,7 +166,7 @@
    [:input {:type :button :value "Cadastra" :on-click #(cadastra)}]
    [:div [:label (str "Produtos " @resposta-mercado)]]
    [:div
-    (for [p (distinct (map :produto @mercado))] ^{:key (gen-key)}
+    (for [p (distinct (map :nome @mercado))] ^{:key (gen-key)}
          [:input {:type :button :value p :on-click #(do 
                                                       (reset! cache-produto p)
                                                       (consulta))}])]
@@ -190,15 +190,22 @@
 
 (defn botao-compra [p]
   [:input {:style (estilo-compra p) 
-           :value (:produto p) 
+           :default-value (:nome p) 
            :on-click #(put! canal-eventos [:toggle-comprar p])}])
 
 (defn entrada-estoque [p]
-  [:input {:id "id"
-           :name "nome"
-           :type "input"
-           :value (:estoque p)
-           :on-change #(put! canal-eventos [:update-estoque (assoc p :estoque (-> % .-target .-value))])}])
+  [:div
+   [:input {:id "botao"
+            :type "button"
+            :read-only true
+            :value "<-"
+            :on-click #(put! canal-eventos [:update-estoque (assoc p :estoque (dec (:estoque p))) :debug p]) }]
+   [:label (:estoque p)]
+   [:input {:id "botao"
+            :type "button"
+            :read-only true
+            :value "->"
+            :on-click #(put! canal-eventos [:update-estoque (assoc p :estoque (inc (js/parseInt (:estoque p))))]) }]])
 
 (defn elemento-compras [p] ^{:key (gen-key)}
   [:tr 
