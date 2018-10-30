@@ -32,3 +32,15 @@ a {
 a:hover {
   text-decoration: underline;
 }
+caption {
+  border: 1px solid;
+  padding: 5px;
+}
+table {
+  border: 1px solid;
+  padding: 2px;
+}
+td, th {
+    border: 1px solid;
+    padding: 5px;
+}

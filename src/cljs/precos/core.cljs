@@ -105,8 +105,8 @@
 
 (defn estilo-compra [p]
   (if (:comprar p) 
-    {:text-align "center" :background-color "#00FF00" :color "black"}
-    {:text-align "center" :background-color "#AA0000" :color "white"}))
+    {:text-align "center" :background-color "green" :color "black"}
+    {:text-align "center" :background-color "coral" :color "black"}))
 
 ;; -------------------------
 ;; Componentes
@@ -138,13 +138,13 @@
        (reset! visao @produtos)
        [:div
         #_(when-let [v (first (sort-by :preco @visao))]
-          [:table  {:border 2}
+          [:table
            [:caption "Mais barato"]
            [:tbody
             (colunas-tabela)
             (elemento v)]])
         (when (not (empty? @visao))
-          [:table  {:border 2}
+          [:table
            [:caption "Histórico"]
            [:tbody
             (colunas-tabela)
@@ -188,11 +188,6 @@
    [:td (estilo-header-tabela) "Produto"] 
    [:td (estilo-header-tabela) "Estoque"]])
 
-(defn botao-compra [p]
-  [:input {:style (estilo-compra p) 
-           :default-value (:nome p) 
-           :on-click #(put! canal-eventos [:toggle-comprar p])}])
-
 (defn entrada-estoque [p]
   [:div
    [:input {:id "botao"
@@ -200,7 +195,7 @@
             :read-only true
             :value "<-"
             :on-click #(put! canal-eventos [:update-estoque (assoc p :estoque (dec (:estoque p))) :debug p]) }]
-   [:label (:estoque p)]
+   [:label {:style {:padding "12px"}} (:estoque p)]
    [:input {:id "botao"
             :type "button"
             :read-only true
@@ -209,13 +204,15 @@
 
 (defn elemento-compras [p] ^{:key (gen-key)}
   [:tr 
-   [:td (botao-compra p)] 
+   [:td {:style (estilo-compra p) 
+         :on-click #(put! canal-eventos [:toggle-comprar p])}
+    (:nome p)] 
    [:td [entrada-estoque p]]])
 
 (defn tabela-compras []
   (fn []
     [:div
-     [:table  {:border 0}
+     [:table
       [:caption "Lista de compras"]
       [:tbody
        (colunas-tabela-compras)
