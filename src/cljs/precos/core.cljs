@@ -5,7 +5,7 @@
             [cljs-time.format :as f]
             [cljs-time.local :as l]
             [cljs-http.client :as http]
-            [cljs.core.async :refer [<!]]
+            [cljs.core.async :refer [chan put! <!]]
             [accountant.core :as accountant]))
 
 ;; Parse json
@@ -24,7 +24,25 @@
 (defonce resposta (atom ""))
 (defonce resposta-cadastro (atom ""))
 (defonce resposta-mercado (atom ""))
-(defonce servidor "https://infinite-crag-89428.herokuapp.com/")
+;(defonce servidor "https://infinite-crag-89428.herokuapp.com/")
+(defonce servidor "http://localhost:3000/")
+
+
+; Feio mas funciona
+(def eventos 
+  {:update-estoque (fn [{:keys [produto comprar estoque]}]
+                     (swap! mercado (fn [a] 
+                                      (map (fn [i] (if (first (filter #(= (:produto i) produto) a)) 
+                                                     (assoc i :estoque estoque)
+                                                     i)) 
+                                           a))))})
+
+(def canal-eventos (chan))
+
+(go
+  (while true 
+    (let [[nome-evento dado-evento] (<! canal-eventos)]
+      ((nome-evento eventos) dado-evento))))
 
 ;; -------------------------
 ;; Funcoes
@@ -180,20 +198,14 @@
                    (map (fn [i] (if (first (filter #(= (:produto i) (:produto p)) a)) 
                                   (assoc i :estoque e)
                                   i)) 
-                        a)))
-  (:estoque
-   (first (filter #(= (:produto p) (:produto %)) @mercado))))
+                        a))))
 
 (defn entrada-estoque [p]
-  (let [valor (atom [])]
-    (fn []
-      [:input {:id "id"
-               :name "nome"
-               :class "form-control"
-               :type "input"
-               :required ""
-               :value @valor
-               :on-change #(reset! valor (-> % .-target .-value))}])))
+  [:input {:id "id"
+           :name "nome"
+           :type "input"
+           :value (:estoque p)
+           :on-change #(put! canal-eventos [:update-estoque (assoc p :estoque (-> % .-target .-value))])}])
 
 (defn elemento-compras [p] ^{:key (gen-key)}
   [:tr 
