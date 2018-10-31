@@ -243,9 +243,9 @@
    [:div [:label (str "Produtos " @(rf/subscribe [:resposta-mercado]))]]
    [:div
     (for [item @(rf/subscribe [:mercado])] ^{:key (gen-key)}
-         [:input {:type :button :value (:nome item) :on-click #(do 
-                                                       (rf/dispatch [:cache-produto (:nome item)])
-                                                       (rf/dispatch [:consulta (:nome item)]))}])]
+         [:input {:style (estilo-compra item) :type :button :value (:nome item) :on-click #(do 
+                                                                           (rf/dispatch [:cache-produto (:nome item)])
+                                                                           (rf/dispatch [:consulta (:nome item)]))}])]
    [:div [:label "Locais"]]
    [:div
     (for [p (distinct (map :local @(rf/subscribe [:produtos])))] ^{:key (gen-key)}
