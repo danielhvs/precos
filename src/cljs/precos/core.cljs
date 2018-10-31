@@ -14,7 +14,6 @@
 (declare consulta-mercado)
 (declare consulta)
 (declare cadastra)
-(declare lista-compras)
 
 (defn estilo-compra [p]
   (if (:comprar p) 
@@ -230,36 +229,32 @@
 ;; Views
 (defn home-page []
   [:div
+   [:div [:a ^{:key (gen-key)} {:href "/lista-compras"} "Lista de compras"]]
+   [:div [:h2 "Cadastro"]]
+   [:div [:label "Produto"] (input-element "p" "p" "input" :cache-produto :cache-produto identity) ]
+   [:div [:label "Preco"] (input-element "v" "v" "input" :cache-preco :cache-preco ->reais)]
+   [:div [:label "Local"] (input-element "l" "l" "input" :cache-local :cache-local identity)]
+   (let [p {
+            :nome @(rf/subscribe [:cache-produto])
+            :local @(rf/subscribe [:cache-local])
+            :preco @(rf/subscribe [:cache-preco])
+           }]
+     [:input {:type :button :value "Cadastra" :on-click #(rf/dispatch [:cadastra p])}])
+   [:div [:label (str "Produtos " @(rf/subscribe [:resposta-mercado]))]]
+   [:div
+    (for [nome (distinct (map :nome @(rf/subscribe [:mercado])))] ^{:key (gen-key)}
+         [:input {:type :button :value nome :on-click #(do 
+                                                      (rf/dispatch [:cache-produto nome])
+                                                      (rf/dispatch [:consulta nome]))}])]
+   [:div [:label "Locais"]]
+   [:div
+    (for [p (distinct (map :local @(rf/subscribe [:produtos])))] ^{:key (gen-key)}
+         [:input {:type :button :value p :on-click #(rf/dispatch [:cache-local p])}])]
+   [:div [:label @(rf/subscribe [:resposta-cadastro])]]
+   [:div [tabela]]
+   [:div [debug]]
    [clock]
-   [:table
-    [:body
-     [:tr [:td
-           [:div [lista-compras]]]
-      [:td
-       [:div [:h2 {:style {:text-align "center"}} "Cadastro"]]
-       [:div [:label "Produto"] (input-element "p" "p" "input" :cache-produto :cache-produto identity) ]
-       [:div [:label "Preco"] (input-element "v" "v" "input" :cache-preco :cache-preco ->reais)]
-       [:div [:label "Local"] (input-element "l" "l" "input" :cache-local :cache-local identity)]
-       (let [p {
-                :nome @(rf/subscribe [:cache-produto])
-                :local @(rf/subscribe [:cache-local])
-                :preco @(rf/subscribe [:cache-preco])
-                }]
-         [:input {:type :button :value "Cadastra" :on-click #(rf/dispatch [:cadastra p])}])
-       [:div [:label (str "Produtos " @(rf/subscribe [:resposta-mercado]))]]
-       [:div
-        (for [item @(rf/subscribe [:mercado])] ^{:key (gen-key)}
-             [:input {:style (estilo-compra item) :type :button :value (:nome item) :on-click #(do 
-                                                                                       (rf/dispatch [:cache-produto (:nome item)])
-                                                                                       (rf/dispatch [:consulta (:nome item)]))}])]
-       [:div [:label "Locais"]]
-       [:div
-        (for [p (distinct (map :local @(rf/subscribe [:produtos])))] ^{:key (gen-key)}
-             [:input {:type :button :value p :on-click #(rf/dispatch [:cache-local p])}])]
-       [:div [:label @(rf/subscribe [:resposta-cadastro])]]
-       [:div [tabela]]
-       [:div [debug]]]]]]]
-   )
+   ])
 
 (defn estilo-header-tabela []
   {:style {:text-align "center"}})
@@ -301,11 +296,12 @@
             (elemento-compras p))]]]))
 
 (defn lista-compras []
-  [:div 
-   [:h2 "Lista de Compras"]
-   [:input {:type :button :value "Salva" :on-click #(rf/dispatch [:salva-mercado @(rf/subscribe [:mercado])])}]
-   [:div [:label @(rf/subscribe [:resposta-mercado])]]
-   [tabela-compras]]) 
+  [:div [:a {:href "/"} "Preços dos produtos"]
+   [:div 
+    [:h2 "Lista de Compras"]
+    [:input {:type :button :value "Salva" :on-click #(rf/dispatch [:salva-mercado @(rf/subscribe [:mercado])])}]
+    [:div [:label @(rf/subscribe [:resposta-mercado])]]
+    [tabela-compras]]]) 
 
 ;; -------------------------
 ;; Routes
