@@ -46,6 +46,18 @@
   (fn [db [_ novo-mercado]] 
     (assoc db :mercado novo-mercado)))
 
+(rf/reg-event-db                
+  :toggle-comprar
+  (fn [db [_ {:keys [nome comprar estoque]}]] 
+    (let [mercado (:mercado db)
+          item (first (filter #(= nome (:nome %)) mercado))]
+      (assoc db :mercado 
+             (map (fn [i] 
+                    (if (= item i) 
+                      (assoc item :comprar (not (:comprar item))) 
+                      i)) 
+                  mercado)))))
+
 ;; -- Domino 4 - Query  -------------------------------------------------------
 
 (rf/reg-sub
@@ -57,7 +69,6 @@
   :mercado
   (fn [db _]
     (:mercado db)))
-
 
 ;; -- Domino 5 - View Functions ----------------------------------------------
 
@@ -101,12 +112,6 @@
 ; Feio mas funciona
 (def eventos 
   {:debug (fn [p] (prn p))
-   :toggle-comprar (fn [{:keys [nome comprar estoque]}]
-                     (swap! mercado (fn [a] 
-                                      (map (fn [i] (if (first (filter #(= (:nome i) nome) a)) 
-                                                     (assoc i :comprar (not (:comprar i)))
-                                                     i)) 
-                                           a))))
    :update-estoque (fn [{:keys [nome comprar estoque]}]
                      (swap! mercado (fn [a] 
                                       (map (fn [i] (if (first (filter #(= (:nome i) nome) a)) 
@@ -273,7 +278,7 @@
 (defn elemento-compras [p] ^{:key (gen-key)}
   [:tr 
    [:td {:style (estilo-compra p) 
-         :on-click #(put! canal-eventos [:toggle-comprar p])}
+         :on-click #(rf/dispatch [:toggle-comprar p])}
     (:nome p)] 
    [:td [entrada-estoque p]]])
 
@@ -284,7 +289,7 @@
       [:caption "Lista de compras"]
       [:tbody
        (colunas-tabela-compras)
-       (for [p @mercado] ^{:key (gen-key)}
+       (for [p @(rf/subscribe [:mercado])] ^{:key (gen-key)}
             (elemento-compras p))]]]))
 
 (defn lista-compras []
