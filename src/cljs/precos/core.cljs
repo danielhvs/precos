@@ -10,6 +10,8 @@
             [cljs.core.async :refer [chan put! <!]]
             [accountant.core :as accountant]))
 
+(declare salva-mercado)
+
 (defn estilo-compra [p]
   (if (:comprar p) 
     {:text-align "center" :background-color "green" :color "black"}
@@ -58,6 +60,29 @@
                       i)) 
                   mercado)))))
 
+(rf/reg-event-db                
+  :update-estoque
+  (fn [db [_ {:keys [nome comprar estoque]}]] 
+    (let [mercado (:mercado db)
+          item (first (filter #(= nome (:nome %)) mercado))]
+      (assoc db :mercado 
+             (map (fn [i] 
+                    (if (= item i) 
+                      (assoc item :estoque estoque) 
+                      i)) 
+                  mercado)))))
+
+(rf/reg-event-db                
+  :resposta-mercado
+  (fn [db [_ nova-resposta]] 
+    (assoc db :resposta-mercado nova-resposta)))
+
+(rf/reg-event-db                
+ :salva-mercado
+ (fn [db [_ _]] 
+   (salva-mercado)
+   db))
+
 ;; -- Domino 4 - Query  -------------------------------------------------------
 
 (rf/reg-sub
@@ -65,20 +90,10 @@
   (fn [db _]     ;; db is current app state. 2nd unused param is query vector
     (:time db))) ;; return a query computation over the application state
 
-(rf/reg-sub
-  :mercado
-  (fn [db _]
-    (:mercado db)))
+(rf/reg-sub :mercado (fn [db _] (:mercado db)))
+(rf/reg-sub :resposta-mercado (fn [db _] (:resposta-mercado db)))
 
 ;; -- Domino 5 - View Functions ----------------------------------------------
-
-(defn lista-mercado
-  []
-  [:div
-   {:style {}}
-   (let [mercado @(rf/subscribe [:mercado])]
-     (for [item mercado]
-       [:div {:style (estilo-compra item)} (:nome item)]))])
 
 (defn clock
   []
@@ -112,12 +127,7 @@
 ; Feio mas funciona
 (def eventos 
   {:debug (fn [p] (prn p))
-   :update-estoque (fn [{:keys [nome comprar estoque]}]
-                     (swap! mercado (fn [a] 
-                                      (map (fn [i] (if (first (filter #(= (:nome i) nome) a)) 
-                                                     (assoc i :estoque estoque)
-                                                     i)) 
-                                           a))))})
+   })
 
 (def canal-eventos (chan))
 
@@ -142,23 +152,22 @@
   (str servidor op))
 
 (defn salva-mercado []
-  (reset! resposta-mercado "Salvando lista de mercado...")
+  (rf/dispatch [:resposta-mercado "Salvando lista de mercado..."])
   (go
-    (let [response (<! (try (http/post (operacao "salva-mercado") {:json-params @mercado :with-credentials? false})
+    (let [response (<! (try (http/post (operacao "salva-mercado") {:json-params @(rf/subscribe [:mercado]) :with-credentials? false})
                             (catch :default e
                               (reset! a-debug e))))]
-      (reset! mercado (reverse (sort-by :comprar (json->clj (:body response)))))
-      (reset! resposta-mercado ""))))
+      (rf/dispatch [:update-mercado (reverse (sort-by :comprar (json->clj (:body response))))])
+      (rf/dispatch [:resposta-mercado ""]))))
 
 (defn consulta-mercado []
-  (reset! resposta-mercado "Consultando lista de mercado...")
+  (rf/dispatch [:resposta-mercado "Consultando lista de mercado..."])
   (go
     (let [response (<! (try (http/get (operacao "consulta-mercado") {:with-credentials? false})
                             (catch :default e
                               (reset! a-debug e))))]
-      (reset! mercado (reverse (sort-by :comprar (json->clj (:body response)))))
-      (rf/dispatch [:update-mercado @mercado])
-      (reset! resposta-mercado ""))))
+      (rf/dispatch [:update-mercado (reverse (sort-by :comprar (json->clj (:body response))))])
+      (rf/dispatch [:resposta-mercado ""]))))
 
 (defn consulta []
   (reset! resposta-cadastro (str "Consultando " @cache-produto "..."))
@@ -231,13 +240,12 @@
   [:div
    [:div [:a ^{:key (gen-key)} {:href "/lista-compras"} "Lista de compras"]]
    [clock]
-   [lista-mercado]
    [:div [:h2 "Cadastro"]]
    [:div [:label "Produto"] (input-element "p" "p" "input" cache-produto identity) ]
    [:div [:label "Preco"] (input-element "v" "v" "input" cache-preco ->reais)]
    [:div [:label "Local"] (input-element "l" "l" "input" cache-local identity)]
    [:input {:type :button :value "Cadastra" :on-click #(cadastra)}]
-   [:div [:label (str "Produtos " @resposta-mercado)]]
+   [:div [:label (str "Produtos " @(rf/subscribe [:resposta-mercado]))]]
    [:div
     (for [p (distinct (map :nome @mercado))] ^{:key (gen-key)}
          [:input {:type :button :value p :on-click #(do 
@@ -267,13 +275,13 @@
             :type "button"
             :read-only true
             :value "<-"
-            :on-click #(put! canal-eventos [:update-estoque (assoc p :estoque (dec (:estoque p))) :debug p]) }]
+            :on-click #(rf/dispatch [:update-estoque (assoc p :estoque (dec (js/parseInt (:estoque p))))])}]
    [:label {:style {:padding "12px"}} (:estoque p)]
    [:input {:id "botao"
             :type "button"
             :read-only true
             :value "->"
-            :on-click #(put! canal-eventos [:update-estoque (assoc p :estoque (inc (js/parseInt (:estoque p))))]) }]])
+            :on-click #(rf/dispatch [:update-estoque (assoc p :estoque (inc (js/parseInt (:estoque p))))]) }]])
 
 (defn elemento-compras [p] ^{:key (gen-key)}
   [:tr 
@@ -296,8 +304,8 @@
   [:div [:a {:href "/"} "Preços dos produtos"]
    [:div 
     [:h2 "Lista de Compras"]
-    [:input {:type :button :value "Salva" :on-click #(salva-mercado)}]
-    [:div [:label @resposta-mercado]]
+    [:input {:type :button :value "Salva" :on-click #(rf/dispatch [:salva-mercado])}]
+    [:div [:label @(rf/subscribe [:resposta-mercado])]]
     [:label @resposta]
     [tabela-compras]]]) 
 
