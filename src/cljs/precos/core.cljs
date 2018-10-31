@@ -209,7 +209,7 @@
             (colunas-tabela)
             (elemento v)]])
         (when (not (empty? @visao))
-          [:table
+          [:table.resultado
            [:caption "Histórico"]
            [:tbody
             (colunas-tabela)
@@ -220,16 +220,16 @@
   [:div [:label (str @a-debug)]])
 
 (defn header []
-  [:table [:tbody [:tr 
-                   [:td [:a ^{:key (gen-key)} {:href "/lista-compras"} "Lista de compras"]]
-                   [:td [:a ^{:key (gen-key)} {:href "/"} "Home"]]
-                   ]]])
+  [:table.menu [:tbody [:tr 
+                      [:td [:a ^{:key (gen-key)} {:href "/lista-compras"} "Lista de compras"]]
+                      [:td [:a ^{:key (gen-key)} {:href "/"} "Cadastro"]]
+                      ]]])
 
 ;; -------------------------
 ;; Views
 (defn home-page []
   [:div
-   [:div [:a ^{:key (gen-key)} {:href "/lista-compras"} "Lista de compras"]]
+   [header]
    [:div [:h2 "Cadastro"]]
    [:div [:label "Produto"] (input-element "p" "p" "input" :cache-produto :cache-produto identity) ]
    [:div [:label "Preco"] (input-element "v" "v" "input" :cache-preco :cache-preco ->reais)]
@@ -288,7 +288,7 @@
 (defn tabela-compras []
   (fn []
     [:div
-     [:table
+     [:table.resultado
       [:caption "Lista de compras"]
       [:tbody
        (colunas-tabela-compras)
@@ -296,12 +296,12 @@
             (elemento-compras p))]]]))
 
 (defn lista-compras []
-  [:div [:a {:href "/"} "Preços dos produtos"]
-   [:div 
-    [:h2 "Lista de Compras"]
-    [:input {:type :button :value "Salva" :on-click #(rf/dispatch [:salva-mercado @(rf/subscribe [:mercado])])}]
-    [:div [:label @(rf/subscribe [:resposta-mercado])]]
-    [tabela-compras]]]) 
+  [:div 
+   [header]
+   [:h2 "Lista de Compras"]
+   [:input {:type :button :value "Salva" :on-click #(rf/dispatch [:salva-mercado @(rf/subscribe [:mercado])])}]
+   [:div [:label @(rf/subscribe [:resposta-mercado])]]
+   [tabela-compras]]) 
 
 ;; -------------------------
 ;; Routes
