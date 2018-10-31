@@ -10,6 +10,12 @@
             [cljs.core.async :refer [chan put! <!]]
             [accountant.core :as accountant]))
 
+(defn estilo-compra [p]
+  (if (:comprar p) 
+    {:text-align "center" :background-color "green" :color "black"}
+    {:text-align "center" :background-color "coral" :color "black"}))
+
+
  ;-- Domino 1 - Event Dispatch -----------------------------------------------
 
 (defn dispatch-timer-event
@@ -35,6 +41,10 @@
   (fn [db [_ new-time]]          ;; note how the 2nd parameter is destructured to obtain the data value
     (assoc db :time new-time)))  ;; compute and return the new application state
 
+(rf/reg-event-db                
+  :update-mercado               
+  (fn [db [_ novo-mercado]] 
+    (assoc db :mercado novo-mercado)))
 
 ;; -- Domino 4 - Query  -------------------------------------------------------
 
@@ -43,7 +53,21 @@
   (fn [db _]     ;; db is current app state. 2nd unused param is query vector
     (:time db))) ;; return a query computation over the application state
 
+(rf/reg-sub
+  :mercado
+  (fn [db _]
+    (:mercado db)))
+
+
 ;; -- Domino 5 - View Functions ----------------------------------------------
+
+(defn lista-mercado
+  []
+  [:div
+   {:style {}}
+   (let [mercado @(rf/subscribe [:mercado])]
+     (for [item mercado]
+       [:div {:style (estilo-compra item)} (:nome item)]))])
 
 (defn clock
   []
@@ -128,6 +152,7 @@
                             (catch :default e
                               (reset! a-debug e))))]
       (reset! mercado (reverse (sort-by :comprar (json->clj (:body response)))))
+      (rf/dispatch [:update-mercado @mercado])
       (reset! resposta-mercado ""))))
 
 (defn consulta []
@@ -148,11 +173,6 @@
                               (reset! a-debug e))))]
       (consulta)
       (consulta-mercado))))
-
-(defn estilo-compra [p]
-  (if (:comprar p) 
-    {:text-align "center" :background-color "green" :color "black"}
-    {:text-align "center" :background-color "coral" :color "black"}))
 
 ;; -------------------------
 ;; Componentes
@@ -206,6 +226,7 @@
   [:div
    [:div [:a ^{:key (gen-key)} {:href "/lista-compras"} "Lista de compras"]]
    [clock]
+   [lista-mercado]
    [:div [:h2 "Cadastro"]]
    [:div [:label "Produto"] (input-element "p" "p" "input" cache-produto identity) ]
    [:div [:label "Preco"] (input-element "v" "v" "input" cache-preco ->reais)]
