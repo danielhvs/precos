@@ -242,10 +242,10 @@
      [:input {:type :button :value "Cadastra" :on-click #(rf/dispatch [:cadastra p])}])
    [:div [:label (str "Produtos " @(rf/subscribe [:resposta-mercado]))]]
    [:div
-    (for [nome (distinct (map :nome @(rf/subscribe [:mercado])))] ^{:key (gen-key)}
-         [:input {:type :button :value nome :on-click #(do 
-                                                      (rf/dispatch [:cache-produto nome])
-                                                      (rf/dispatch [:consulta nome]))}])]
+    (for [item @(rf/subscribe [:mercado])] ^{:key (gen-key)}
+         [:input {:type :button :value (:nome item) :on-click #(do 
+                                                       (rf/dispatch [:cache-produto (:nome item)])
+                                                       (rf/dispatch [:consulta (:nome item)]))}])]
    [:div [:label "Locais"]]
    [:div
     (for [p (distinct (map :local @(rf/subscribe [:produtos])))] ^{:key (gen-key)}
