@@ -117,9 +117,8 @@
 ;; -------------------------
 ;; Estado
 (defonce a-debug (atom ""))
-#_(defonce servidor "https://infinite-crag-89428.herokuapp.com/")
-(defonce servidor "http://localhost:3000/")
-
+(defonce servidor "https://infinite-crag-89428.herokuapp.com/")
+#_(defonce servidor "http://localhost:3000/")
 
 ;; -------------------------
 ;; Funcoes
