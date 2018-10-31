@@ -2,11 +2,57 @@
   (:require-macros [cljs.core.async.macros :refer [go]])
   (:require [reagent.core :as reagent :refer [atom]]
             [secretary.core :as secretary :include-macros true]
+            [re-frame.core :as rf]
+            [clojure.string :as str]
             [cljs-time.format :as f]
             [cljs-time.local :as l]
             [cljs-http.client :as http]
             [cljs.core.async :refer [chan put! <!]]
             [accountant.core :as accountant]))
+
+ ;-- Domino 1 - Event Dispatch -----------------------------------------------
+
+(defn dispatch-timer-event
+  []
+  (let [now (js/Date.)]
+    (rf/dispatch [:timer now])))  ;; <-- dispatch used
+
+;; Call the dispatching function every second.
+;; `defonce` is like `def` but it ensures only one instance is ever
+;; created in the face of figwheel hot-reloading of this file.
+(defonce do-timer (js/setInterval dispatch-timer-event 1000))
+;------------------------
+
+(rf/reg-event-db              ;; sets up initial application state
+  :initialize                 ;; usage:  (dispatch [:initialize])
+  (fn [_ _]                   ;; the two parameters are not important here, so use _
+    {:time (js/Date.)         ;; What it returns becomes the new application state
+     }))    ;; so the application state will initially be a map with two keys
+
+
+(rf/reg-event-db                 ;; usage:  (dispatch [:timer a-js-Date])
+  :timer                         ;; every second an event of this kind will be dispatched
+  (fn [db [_ new-time]]          ;; note how the 2nd parameter is destructured to obtain the data value
+    (assoc db :time new-time)))  ;; compute and return the new application state
+
+
+;; -- Domino 4 - Query  -------------------------------------------------------
+
+(rf/reg-sub
+  :time
+  (fn [db _]     ;; db is current app state. 2nd unused param is query vector
+    (:time db))) ;; return a query computation over the application state
+
+;; -- Domino 5 - View Functions ----------------------------------------------
+
+(defn clock
+  []
+  [:div.example-clock
+   {:style {}}
+   (-> @(rf/subscribe [:time])
+       .toTimeString
+       (str/split " ")
+       first)])
 
 ;; Parse json
 (defn json->clj [json] (js->clj (.parse js/JSON json) :keywordize-keys true))
@@ -159,6 +205,7 @@
 (defn home-page []
   [:div
    [:div [:a ^{:key (gen-key)} {:href "/lista-compras"} "Lista de compras"]]
+   [clock]
    [:div [:h2 "Cadastro"]]
    [:div [:label "Produto"] (input-element "p" "p" "input" cache-produto identity) ]
    [:div [:label "Preco"] (input-element "v" "v" "input" cache-preco ->reais)]
@@ -246,6 +293,7 @@
 ;; Initialize app
 
 (defn mount-root []
+  (rf/dispatch-sync [:initialize])     ;; puts a value into application state
   (reagent/render [current-page] (.getElementById js/document "app")))
 
 (defn init! []
