@@ -220,6 +220,12 @@
 (defn debug []
   [:div [:label (str @a-debug)]])
 
+(defn header []
+  [:table [:tbody [:tr 
+                   [:td [:a ^{:key (gen-key)} {:href "/lista-compras"} "Lista de compras"]]
+                   [:td [:a ^{:key (gen-key)} {:href "/"} "Home"]]
+                   ]]])
+
 ;; -------------------------
 ;; Views
 (defn home-page []
