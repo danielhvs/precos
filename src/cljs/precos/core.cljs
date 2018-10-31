@@ -70,7 +70,7 @@
                       i)) 
                   mercado)))))
 
-(rf/reg-event-db :update-mercado (fn [db [_ novo-mercado]] (assoc db :mercado novo-mercado)))
+(rf/reg-event-db :update-mercado (fn [db [_ novo-mercado]] (assoc db :mercado (filter #(not (nil? (:nome %))) novo-mercado))))
 (rf/reg-event-db :resposta-mercado (fn [db [_ nova-resposta]] (assoc db :resposta-mercado nova-resposta)))
 (rf/reg-event-db :resposta-cadastro (fn [db [_ nova-resposta]] (assoc db :resposta-cadastro nova-resposta)))
 (rf/reg-event-db :cache-produto (fn [db [_ nova-cache]] (assoc db :cache-produto nova-cache)))
@@ -171,8 +171,8 @@
                             (catch :default e
                               (reset! a-debug e))))]
       (rf/dispatch [:resposta-cadastro (str "Cadastrado " nome " com sucesso")])
-      (consulta nome)
-      (consulta-mercado))))
+      (rf/dispatch [:consulta nome])
+      (rf/dispatch [:consulta-mercado]))))
 
 ;; -------------------------
 ;; Componentes
@@ -225,7 +225,6 @@
 (defn home-page []
   [:div
    [:div [:a ^{:key (gen-key)} {:href "/lista-compras"} "Lista de compras"]]
-   [clock]
    [:div [:h2 "Cadastro"]]
    [:div [:label "Produto"] (input-element "p" "p" "input" :cache-produto :cache-produto identity) ]
    [:div [:label "Preco"] (input-element "v" "v" "input" :cache-preco :cache-preco ->reais)]
@@ -240,7 +239,7 @@
    [:div
     (for [nome (distinct (map :nome @(rf/subscribe [:mercado])))] ^{:key (gen-key)}
          [:input {:type :button :value nome :on-click #(do 
-                                                      (rf/dispatch-sync [:cache-produto nome])
+                                                      (rf/dispatch [:cache-produto nome])
                                                       (rf/dispatch [:consulta nome]))}])]
    [:div [:label "Locais"]]
    [:div
@@ -249,8 +248,8 @@
    [:div [:label @(rf/subscribe [:resposta-cadastro])]]
    [:div [tabela]]
    [:div [debug]]
+   [clock]
    ])
-
 
 (defn estilo-header-tabela []
   {:style {:text-align "center"}})
@@ -281,24 +280,23 @@
     (:nome p)] 
    [:td [entrada-estoque p]]])
 
-(defn tabela-compras [mercado]
+(defn tabela-compras []
   (fn []
     [:div
      [:table
       [:caption "Lista de compras"]
       [:tbody
        (colunas-tabela-compras)
-       (for [p mercado] ^{:key (gen-key)}
+       (for [p @(rf/subscribe [:mercado])] ^{:key (gen-key)}
             (elemento-compras p))]]]))
 
 (defn lista-compras []
   [:div [:a {:href "/"} "Preços dos produtos"]
    [:div 
     [:h2 "Lista de Compras"]
-    (let [mercado @(rf/subscribe [:mercado])]
-      [:input {:type :button :value "Salva" :on-click #(rf/dispatch [:salva-mercado mercado])}]
-      [:div [:label @(rf/subscribe [:resposta-mercado])]]
-      [tabela-compras mercado])]]) 
+    [:input {:type :button :value "Salva" :on-click #(rf/dispatch [:salva-mercado @(rf/subscribe [:mercado])])}]
+    [:div [:label @(rf/subscribe [:resposta-mercado])]]
+    [tabela-compras]]]) 
 
 ;; -------------------------
 ;; Routes
