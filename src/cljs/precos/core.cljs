@@ -6,7 +6,7 @@
             [clojure.string :as str]
             [cljs-time.format :as f]
             [cljs-time.local :as l]
-            [re-com.buttons :as ui]
+            [re-com.buttons :refer [button md-circle-icon-button]]
             [re-com.box :refer [h-box v-box box]]
             [cljs-http.client :as http]
             [cljs.core.async :refer [<!]]
@@ -240,13 +240,13 @@
             :local @(rf/subscribe [:cache-local])
             :preco @(rf/subscribe [:cache-preco])
            }]
-     [ui/button :class "btn-primary"
+     [button :class "btn-primary"
       :label "Cadastra" 
       :on-click #(rf/dispatch [:cadastra p])])
    [:div [:label (str "Produtos " @(rf/subscribe [:resposta-mercado]))]]
    [:div
     (for [item @(rf/subscribe [:mercado])] ^{:key (gen-key)}
-         [ui/button :style (estilo-compra item) :label (:nome item) :on-click #(do 
+         [button :style (estilo-compra item) :label (:nome item) :on-click #(do 
                                                                (rf/dispatch [:cache-produto (:nome item)])
                                                                (rf/dispatch [:consulta (:nome item)]))])]
    [:div [:label "Locais"]]
@@ -278,17 +278,13 @@
 
 (defn entrada-estoque [p]
   [:div
-   [:input {:id "botao"
-            :type "button"
-            :read-only true
-            :value "<-"
-            :on-click #(rf/dispatch [:update-estoque (assoc p :estoque (dec (js/parseInt (:estoque p))))])}]
+   [md-circle-icon-button :size :smaller
+    :md-icon-name "zmdi-minus"
+    :on-click #(rf/dispatch [:update-estoque (assoc p :estoque (dec (js/parseInt (:estoque p))))])]
    [:label {:style {:padding "12px"}} (:estoque p)]
-   [:input {:id "botao"
-            :type "button"
-            :read-only true
-            :value "->"
-            :on-click #(rf/dispatch [:update-estoque (assoc p :estoque (inc (js/parseInt (:estoque p))))]) }]])
+   [md-circle-icon-button :size :smaller
+    :md-icon-name "zmdi-plus"
+    :on-click #(rf/dispatch [:update-estoque (assoc p :estoque (inc (js/parseInt (:estoque p))))]) ]])
 
 (defn elemento-compras [p] ^{:key (gen-key)}
   [:tr 
