@@ -9,7 +9,7 @@
             [re-com.buttons :refer [button md-circle-icon-button]]
             [re-com.box :refer [h-box v-box box]]
             [re-com.misc :refer [input-text]]
-            [re-com.text :refer [title]]
+            [re-com.text :refer [label title]]
             [re-com.tabs :refer [horizontal-tabs]]
             [cljs-http.client :as http]
             [cljs.core.async :refer [<!]]
@@ -179,8 +179,7 @@
             (colunas-tabela)
             (elemento v)]])
         (when (not (empty? @visao))
-          [:table.resultado
-           [:caption "Histórico"]
+          [:table {:class "table"}
            [:tbody
             (colunas-tabela)
             (for [v @visao] ^{:key (gen-key)}
@@ -241,13 +240,13 @@
    :children [(header)
               [box :child (view-cadastro)]]])
 
-(defn estilo-header-tabela []
-  {:style {:text-align "center"}})
+(defn estilo-centro []
+  {:text-align "center" :vertical-align "middle"})
 
 (defn colunas-tabela-compras []
   [:tr 
-   [:td (estilo-header-tabela) "Produto"] 
-   [:td (estilo-header-tabela) "Estoque"]])
+   [:td {:style (estilo-centro)} "Produto"] 
+   [:td {:style (estilo-centro)} "Estoque"]])
 
 (defn entrada-estoque [p]
   [:div
@@ -261,7 +260,7 @@
 
 (defn elemento-compras [p] ^{:key (gen-key)}
   [:tr 
-   [:td {:style (estilo-compra p) 
+   [:td {:style (conj (estilo-centro) (estilo-compra p)) 
          :on-click #(rf/dispatch [:toggle-comprar p])}
     (:nome p)] 
    [:td [entrada-estoque p]]])
@@ -269,8 +268,7 @@
 (defn tabela-compras []
   (fn []
     [:div
-     [:table.resultado
-      [:caption "Lista de compras"]
+     [:table {:class "table"}
       [:tbody
        (colunas-tabela-compras)
        (for [p @(rf/subscribe [:mercado])] ^{:key (gen-key)}
