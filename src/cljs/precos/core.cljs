@@ -220,7 +220,7 @@
    [:div [titulo "Locais" :level2]]
    [:div
     (for [p (distinct (map :local @(rf/subscribe [:produtos])))] ^{:key (gen-key)}
-         [button :class "btn-secondary" :label p :on-click #(rf/dispatch [:cache-local p])])]
+         [button :class "btn-secondary" :label (if (empty? p) "(vazio)!?" p) :on-click #(rf/dispatch [:cache-local p])])]
    [:div [:label @(rf/subscribe [:resposta-cadastro])]]
    [:div [titulo "Historico" :level2]]
    [:div [tabela]]
