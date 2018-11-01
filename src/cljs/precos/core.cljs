@@ -10,6 +10,7 @@
             [re-com.box :refer [h-box v-box box]]
             [re-com.misc :refer [input-text]]
             [re-com.text :refer [title]]
+            [re-com.tabs :refer [horizontal-tabs]]
             [cljs-http.client :as http]
             [cljs.core.async :refer [<!]]
             [accountant.core :as accountant]))
@@ -28,7 +29,7 @@
 (rf/reg-event-db              ;; sets up initial application state
   :initialize                 ;; usage:  (dispatch [:initialize])
   (fn [_ _]                   ;; the two parameters are not important here, so use _
-    {})) 
+    {:view-id "/"})) 
 
 (rf/reg-event-db                
   :toggle-comprar
@@ -61,6 +62,9 @@
 (rf/reg-event-db :cache-local (fn [db [_ nova-cache]] (assoc db :cache-local nova-cache)))
 (rf/reg-event-db :cache-preco (fn [db [_ nova-cache]] (assoc db :cache-preco nova-cache)))
 (rf/reg-event-db :produtos (fn [db [_ novo]] (assoc db :produtos novo)))
+(rf/reg-event-db :altera-view (fn [db [_ novo]] 
+                                (secretary/dispatch! novo)
+                                (assoc db :view-id novo)))
 
 (rf/reg-event-db :salva-mercado (fn [db [_ m]] (salva-mercado m) db))
 (rf/reg-event-db :consulta-mercado (fn [db [_ _]] (consulta-mercado) db))
@@ -76,6 +80,7 @@
 (rf/reg-sub :cache-preco (fn [db _] (:cache-preco db)))
 (rf/reg-sub :cache-local (fn [db _] (:cache-local db)))
 (rf/reg-sub :produtos (fn [db _] (:produtos db)))
+(rf/reg-sub :view-id (fn [db _] (:view-id db)))
 
 ;; -- Domino 5 - View Functions ----------------------------------------------
 
@@ -217,13 +222,18 @@
     (for [p (distinct (map :local @(rf/subscribe [:produtos])))] ^{:key (gen-key)}
          [button :class "btn-secondary" :label p :on-click #(rf/dispatch [:cache-local p])])]
    [:div [:label @(rf/subscribe [:resposta-cadastro])]]
+   [:div [titulo "Historico" :level2]]
    [:div [tabela]]
    [:div [debug]]
    ]
 )
 
 (defn header []
-  [h-box :children [[box :child (menu-compras)] 
+  [horizontal-tabs 
+   :model @(rf/subscribe [:view-id])
+   :tabs [{:id "/lista-compras" :label "Lista de Compras"} {:id "/" :label "Cadastro"}]
+   :on-change #(rf/dispatch [:altera-view %])]
+  #_[h-box :children [[box :child (menu-compras)] 
                     [box :child (menu-cadastro)]]])
 
 (defn home-page []
