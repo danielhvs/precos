@@ -9,6 +9,7 @@
             [re-com.buttons :refer [button md-circle-icon-button]]
             [re-com.box :refer [h-box v-box box]]
             [re-com.misc :refer [input-text]]
+            [re-com.text :refer [title]]
             [cljs-http.client :as http]
             [cljs.core.async :refer [<!]]
             [accountant.core :as accountant]))
@@ -67,11 +68,6 @@
 (rf/reg-event-db :cadastra (fn [db [_ p]] (cadastra p) db))
 
 ;; -- Domino 4 - Query  -------------------------------------------------------
-
-(rf/reg-sub
-  :time
-  (fn [db _]     ;; db is current app state. 2nd unused param is query vector
-    (:time db))) ;; return a query computation over the application state
 
 (rf/reg-sub :mercado (fn [db _] (:mercado db)))
 (rf/reg-sub :resposta-mercado (fn [db _] (:resposta-mercado db)))
@@ -195,27 +191,28 @@
 
 ;; -------------------------
 ;; Views
+(defn titulo [t l]
+  [title :underline? true :level l :label t])
+
 (defn view-cadastro []
   [:div
-   [:div [:h2 "Cadastro"]]
+   [:div (titulo "Cadastro" :level1)]
    [:div [:label "Produto"] (input-element :cache-produto :cache-produto identity) ]
    [:div [:label "Preco"] (input-element :cache-preco :cache-preco ->reais)]
    [:div [:label "Local"] (input-element :cache-local :cache-local identity)]
-   (let [p {
-            :nome @(rf/subscribe [:cache-produto])
+   (let [p {:nome @(rf/subscribe [:cache-produto])
             :local @(rf/subscribe [:cache-local])
-            :preco @(rf/subscribe [:cache-preco])
-            }]
+            :preco @(rf/subscribe [:cache-preco])}]
      [button :class "btn-primary"
       :label "Cadastra" 
       :on-click #(rf/dispatch [:cadastra p])])
-   [:div [:label (str "Produtos " @(rf/subscribe [:resposta-mercado]))]]
+   [:div [titulo "Produtos" :level2]]
    [:div
     (for [item @(rf/subscribe [:mercado])] ^{:key (gen-key)}
          [button :style (estilo-compra item) :label (:nome item) :on-click #(do 
                                                                               (rf/dispatch [:cache-produto (:nome item)])
                                                                               (rf/dispatch [:consulta (:nome item)]))])]
-   [:div [:label "Locais"]]
+   [:div [titulo "Locais" :level2]]
    [:div
     (for [p (distinct (map :local @(rf/subscribe [:produtos])))] ^{:key (gen-key)}
          [button :class "btn-secondary" :label p :on-click #(rf/dispatch [:cache-local p])])]
@@ -272,7 +269,7 @@
 (defn lista-compras []
   [v-box :children [(header) 
                     [:div 
-                     [:h2 "Lista de Compras"]
+                     (titulo "Lista de Compras" :level1)
                      [:input {:type :button :value "Salva" :on-click #(rf/dispatch [:salva-mercado @(rf/subscribe [:mercado])])}]
                      [:div [:label @(rf/subscribe [:resposta-mercado])]]
                      [tabela-compras]]]]) 
