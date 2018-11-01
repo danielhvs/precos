@@ -68,7 +68,7 @@
 
 (rf/reg-event-db :salva-mercado (fn [db [_ m]] (salva-mercado m) db))
 (rf/reg-event-db :consulta-mercado (fn [db [_ _]] (consulta-mercado) db))
-(rf/reg-event-db :consulta (fn [db [_ p]] (consulta p) db))
+(rf/reg-event-db :consulta (fn [db [_ nome]] (consulta nome) (assoc db :nome-consultado nome)))
 (rf/reg-event-db :cadastra (fn [db [_ p]] (cadastra p) db))
 
 ;; -- Domino 4 - Query  -------------------------------------------------------
@@ -81,6 +81,7 @@
 (rf/reg-sub :cache-local (fn [db _] (:cache-local db)))
 (rf/reg-sub :produtos (fn [db _] (:produtos db)))
 (rf/reg-sub :view-id (fn [db _] (:view-id db)))
+(rf/reg-sub :nome-consultado (fn [db _] (:nome-consultado db)))
 
 ;; -- Domino 5 - View Functions ----------------------------------------------
 
@@ -215,12 +216,12 @@
          [button :style (estilo-compra item) :label (:nome item) :on-click #(do 
                                                                               (rf/dispatch [:cache-produto (:nome item)])
                                                                               (rf/dispatch [:consulta (:nome item)]))])]
-   [:div [titulo "Locais" :level2]]
+   [:div [titulo (str "Locais " @(rf/subscribe [:nome-consultado])) :level2]]
    [:div
     (for [p (distinct (map :local @(rf/subscribe [:produtos])))] ^{:key (gen-key)}
          [button :class "btn-secondary" :label (if (empty? p) "(vazio)!?" p) :on-click #(rf/dispatch [:cache-local p])])]
    [:div [:label @(rf/subscribe [:resposta-cadastro])]]
-   [:div [titulo "Historico" :level2]]
+   [:div [titulo (str "Historico " @(rf/subscribe [:nome-consultado])) :level2]]
    [:div [tabela]]
    [:div [debug]]
    ]
