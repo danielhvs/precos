@@ -24,31 +24,10 @@
     {:background-color "coral"}
     {:background-color "skyblue"}))
 
-
- ;-- Domino 1 - Event Dispatch -----------------------------------------------
-
-(defn dispatch-timer-event
-  []
-  (let [now (js/Date.)]
-    (rf/dispatch [:timer now])))  ;; <-- dispatch used
-
-;; Call the dispatching function every second.
-;; `defonce` is like `def` but it ensures only one instance is ever
-;; created in the face of figwheel hot-reloading of this file.
-(defonce do-timer (js/setInterval dispatch-timer-event 1000))
-;------------------------
-
 (rf/reg-event-db              ;; sets up initial application state
   :initialize                 ;; usage:  (dispatch [:initialize])
   (fn [_ _]                   ;; the two parameters are not important here, so use _
-    {:time (js/Date.)         ;; What it returns becomes the new application state
-     }))    ;; so the application state will initially be a map with two keys
-
-
-(rf/reg-event-db                 ;; usage:  (dispatch [:timer a-js-Date])
-  :timer                         ;; every second an event of this kind will be dispatched
-  (fn [db [_ new-time]]          ;; note how the 2nd parameter is destructured to obtain the data value
-    (assoc db :time new-time)))  ;; compute and return the new application state
+    {})) 
 
 (rf/reg-event-db                
   :toggle-comprar
@@ -103,15 +82,6 @@
 (rf/reg-sub :produtos (fn [db _] (:produtos db)))
 
 ;; -- Domino 5 - View Functions ----------------------------------------------
-
-(defn clock
-  []
-  [:div.example-clock
-   {:style {}}
-   (-> @(rf/subscribe [:time])
-       .toTimeString
-       (str/split " ")
-       first)])
 
 ;; Parse json
 (defn json->clj [json] (js->clj (.parse js/JSON json) :keywordize-keys true))
@@ -226,7 +196,7 @@
 ;; -------------------------
 ;; Views
 (defn view-cadastro []
-[:div
+  [:div
    [:div [:h2 "Cadastro"]]
    [:div [:label "Produto"] (input-element :cache-produto :cache-produto identity) ]
    [:div [:label "Preco"] (input-element :cache-preco :cache-preco ->reais)]
@@ -235,7 +205,7 @@
             :nome @(rf/subscribe [:cache-produto])
             :local @(rf/subscribe [:cache-local])
             :preco @(rf/subscribe [:cache-preco])
-           }]
+            }]
      [button :class "btn-primary"
       :label "Cadastra" 
       :on-click #(rf/dispatch [:cadastra p])])
@@ -243,8 +213,8 @@
    [:div
     (for [item @(rf/subscribe [:mercado])] ^{:key (gen-key)}
          [button :style (estilo-compra item) :label (:nome item) :on-click #(do 
-                                                               (rf/dispatch [:cache-produto (:nome item)])
-                                                               (rf/dispatch [:consulta (:nome item)]))])]
+                                                                              (rf/dispatch [:cache-produto (:nome item)])
+                                                                              (rf/dispatch [:consulta (:nome item)]))])]
    [:div [:label "Locais"]]
    [:div
     (for [p (distinct (map :local @(rf/subscribe [:produtos])))] ^{:key (gen-key)}
@@ -252,12 +222,12 @@
    [:div [:label @(rf/subscribe [:resposta-cadastro])]]
    [:div [tabela]]
    [:div [debug]]
-   [clock]
    ]
 )
 
 (defn header []
-  [h-box :children [[box :child (menu-compras)] [box :child (menu-cadastro)]]])
+  [h-box :children [[box :child (menu-compras)] 
+                    [box :child (menu-cadastro)]]])
 
 (defn home-page []
   [v-box
