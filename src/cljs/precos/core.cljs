@@ -270,7 +270,7 @@
   [v-box :children [(header) 
                     [:div 
                      (titulo "Lista de Compras" :level1)
-                     [:input {:type :button :value "Salva" :on-click #(rf/dispatch [:salva-mercado @(rf/subscribe [:mercado])])}]
+                     [button :class "btn-primary" :label "Salva" :on-click #(rf/dispatch [:salva-mercado @(rf/subscribe [:mercado])])]
                      [:div [:label @(rf/subscribe [:resposta-mercado])]]
                      [tabela-compras]]]]) 
 
