@@ -21,8 +21,8 @@
 
 (defn estilo-compra [p]
   (if (:comprar p) 
-    {:text-align "center" :background-color "coral" :color "black"}
-    {:text-align "center" :background-color "skyblue" :color "black"}))
+    {:background-color "coral"}
+    {:background-color "skyblue"}))
 
 
  ;-- Domino 1 - Event Dispatch -----------------------------------------------
@@ -248,7 +248,7 @@
    [:div [:label "Locais"]]
    [:div
     (for [p (distinct (map :local @(rf/subscribe [:produtos])))] ^{:key (gen-key)}
-         [:input {:type :button :value p :on-click #(rf/dispatch [:cache-local p])}])]
+         [button :class "btn-secondary" :label p :on-click #(rf/dispatch [:cache-local p])])]
    [:div [:label @(rf/subscribe [:resposta-cadastro])]]
    [:div [tabela]]
    [:div [debug]]
