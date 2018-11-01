@@ -8,6 +8,7 @@
                  [ring-server "0.5.0"]
                  [re-frame "0.10.5"]
                  [reagent "0.8.1"]
+                 [re-com "2.1.0"]
                  [reagent-utils "0.3.1"]
                  [ring "1.6.3"]
                  [ring/ring-defaults "0.3.1"]

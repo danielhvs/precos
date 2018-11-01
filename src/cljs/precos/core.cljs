@@ -6,6 +6,7 @@
             [clojure.string :as str]
             [cljs-time.format :as f]
             [cljs-time.local :as l]
+            [re-com.buttons :as ui]
             [cljs-http.client :as http]
             [cljs.core.async :refer [<!]]
             [accountant.core :as accountant]))
@@ -239,13 +240,15 @@
             :local @(rf/subscribe [:cache-local])
             :preco @(rf/subscribe [:cache-preco])
            }]
-     [:input {:type :button :value "Cadastra" :on-click #(rf/dispatch [:cadastra p])}])
+     [ui/button :class "btn-primary"
+      :label "Cadastra" 
+      :on-click #(rf/dispatch [:cadastra p])])
    [:div [:label (str "Produtos " @(rf/subscribe [:resposta-mercado]))]]
    [:div
     (for [item @(rf/subscribe [:mercado])] ^{:key (gen-key)}
-         [:input {:style (estilo-compra item) :type :button :value (:nome item) :on-click #(do 
-                                                                           (rf/dispatch [:cache-produto (:nome item)])
-                                                                           (rf/dispatch [:consulta (:nome item)]))}])]
+         [ui/button :style (estilo-compra item) :label (:nome item) :on-click #(do 
+                                                               (rf/dispatch [:cache-produto (:nome item)])
+                                                               (rf/dispatch [:consulta (:nome item)]))])]
    [:div [:label "Locais"]]
    [:div
     (for [p (distinct (map :local @(rf/subscribe [:produtos])))] ^{:key (gen-key)}
