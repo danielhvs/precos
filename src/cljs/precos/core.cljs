@@ -146,8 +146,8 @@
 ;; -------------------------
 ;; Componentes
 (defn input-element
-  [value funcao f]
-  [input-text 
+  [value funcao placeholder f]
+  [input-text :placeholder placeholder
    :model (str @(rf/subscribe [value]))
    :on-change #(rf/dispatch [funcao (f %)])])
 
@@ -197,9 +197,9 @@
 (defn view-cadastro []
   [:div
    [:div (titulo "Cadastro" :level1)]
-   [:div [:label "Produto"] (input-element :cache-produto :cache-produto identity) ]
-   [:div [:label "Preco"] (input-element :cache-preco :cache-preco ->reais)]
-   [:div [:label "Local"] (input-element :cache-local :cache-local identity)]
+   [:div  (input-element :cache-produto :cache-produto "Produto" identity) ]
+   [:div  (input-element :cache-preco :cache-preco "Preco" ->reais)]
+   [:div  (input-element :cache-local :cache-local "Local" identity)]
    (let [p {:nome @(rf/subscribe [:cache-produto])
             :local @(rf/subscribe [:cache-local])
             :preco @(rf/subscribe [:cache-preco])}]
