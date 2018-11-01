@@ -8,6 +8,7 @@
             [cljs-time.local :as l]
             [re-com.buttons :refer [button md-circle-icon-button]]
             [re-com.box :refer [h-box v-box box]]
+            [re-com.misc :refer [input-text]]
             [cljs-http.client :as http]
             [cljs.core.async :refer [<!]]
             [accountant.core :as accountant]))
@@ -179,15 +180,10 @@
 ;; -------------------------
 ;; Componentes
 (defn input-element
-  "An input element which updates its value on change"
-  [id name type value funcao f]
-  [:input {:id id
-           :name name
-           :class "form-control"
-           :type type
-           :required ""
-           :value @(rf/subscribe [value])
-           :on-change #(rf/dispatch [funcao (f (-> % .-target .-value))])}])
+  [value funcao f]
+  [input-text 
+   :model (str @(rf/subscribe [value]))
+   :on-change #(rf/dispatch [funcao (f %)])])
 
 (defn colunas-tabela []
   [:tr [:td "Produto"] [:td "Preco"] [:td "Data"] [:td "Local"]])
@@ -232,9 +228,9 @@
 (defn view-cadastro []
 [:div
    [:div [:h2 "Cadastro"]]
-   [:div [:label "Produto"] (input-element "p" "p" "input" :cache-produto :cache-produto identity) ]
-   [:div [:label "Preco"] (input-element "v" "v" "input" :cache-preco :cache-preco ->reais)]
-   [:div [:label "Local"] (input-element "l" "l" "input" :cache-local :cache-local identity)]
+   [:div [:label "Produto"] (input-element :cache-produto :cache-produto identity) ]
+   [:div [:label "Preco"] (input-element :cache-preco :cache-preco ->reais)]
+   [:div [:label "Local"] (input-element :cache-local :cache-local identity)]
    (let [p {
             :nome @(rf/subscribe [:cache-produto])
             :local @(rf/subscribe [:cache-local])
