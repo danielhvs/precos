@@ -7,6 +7,7 @@
             [cljs-time.format :as f]
             [cljs-time.local :as l]
             [re-com.buttons :as ui]
+            [re-com.box :refer [h-box v-box box]]
             [cljs-http.client :as http]
             [cljs.core.async :refer [<!]]
             [accountant.core :as accountant]))
@@ -15,6 +16,7 @@
 (declare consulta-mercado)
 (declare consulta)
 (declare cadastra)
+(declare header)
 
 (defn estilo-compra [p]
   (if (:comprar p) 
@@ -220,17 +222,15 @@
 (defn debug []
   [:div [:label (str @a-debug)]])
 
-(defn header []
-  [:table.menu [:tbody [:tr 
-                      [:td [:a ^{:key (gen-key)} {:href "/lista-compras"} "Lista de compras"]]
-                      [:td [:a ^{:key (gen-key)} {:href "/"} "Cadastro"]]
-                      ]]])
+(defn menu-compras []
+  [:a ^{:key (gen-key)} {:href "/lista-compras"} "Lista de compras"])
+(defn menu-cadastro []
+  [:a ^{:key (gen-key)} {:href "/"} "Cadastro"])
 
 ;; -------------------------
 ;; Views
-(defn home-page []
-  [:div
-   [header]
+(defn view-cadastro []
+[:div
    [:div [:h2 "Cadastro"]]
    [:div [:label "Produto"] (input-element "p" "p" "input" :cache-produto :cache-produto identity) ]
    [:div [:label "Preco"] (input-element "v" "v" "input" :cache-preco :cache-preco ->reais)]
@@ -257,7 +257,16 @@
    [:div [tabela]]
    [:div [debug]]
    [clock]
-   ])
+   ]
+)
+
+(defn header []
+  [h-box :children [[box :child (menu-compras)] [box :child (menu-cadastro)]]])
+
+(defn home-page []
+  [v-box
+   :children [(header)
+              [box :child (view-cadastro)]]])
 
 (defn estilo-header-tabela []
   {:style {:text-align "center"}})
@@ -299,12 +308,12 @@
             (elemento-compras p))]]]))
 
 (defn lista-compras []
-  [:div 
-   [header]
-   [:h2 "Lista de Compras"]
-   [:input {:type :button :value "Salva" :on-click #(rf/dispatch [:salva-mercado @(rf/subscribe [:mercado])])}]
-   [:div [:label @(rf/subscribe [:resposta-mercado])]]
-   [tabela-compras]]) 
+  [v-box :children [(header) 
+                    [:div 
+                     [:h2 "Lista de Compras"]
+                     [:input {:type :button :value "Salva" :on-click #(rf/dispatch [:salva-mercado @(rf/subscribe [:mercado])])}]
+                     [:div [:label @(rf/subscribe [:resposta-mercado])]]
+                     [tabela-compras]]]]) 
 
 ;; -------------------------
 ;; Routes
