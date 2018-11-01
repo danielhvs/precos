@@ -249,14 +249,14 @@
    [:td {:style (estilo-centro)} "Estoque"]])
 
 (defn entrada-estoque [p]
-  [:div
-   [md-circle-icon-button :size :smaller
-    :md-icon-name "zmdi-minus"
-    :on-click #(rf/dispatch [:update-estoque (assoc p :estoque (dec (js/parseInt (:estoque p))))])]
-   [:label {:style {:padding "12px"}} (:estoque p)]
-   [md-circle-icon-button :size :smaller
-    :md-icon-name "zmdi-plus"
-    :on-click #(rf/dispatch [:update-estoque (assoc p :estoque (inc (js/parseInt (:estoque p))))]) ]])
+  [box :align :center :justify :around :child [:div
+    [md-circle-icon-button :size :smaller
+     :md-icon-name "zmdi-minus"
+     :on-click #(rf/dispatch [:update-estoque (assoc p :estoque (dec (js/parseInt (:estoque p))))])]
+    [:label {:style {:padding "12px"}} (:estoque p)]
+    [md-circle-icon-button :size :smaller
+     :md-icon-name "zmdi-plus"
+     :on-click #(rf/dispatch [:update-estoque (assoc p :estoque (inc (js/parseInt (:estoque p))))]) ]]])
 
 (defn elemento-compras [p] ^{:key (gen-key)}
   [:tr 
