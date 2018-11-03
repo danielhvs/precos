@@ -8,7 +8,7 @@
             [cljs-time.local :as l]
             [re-com.buttons :refer [button md-circle-icon-button]]
             [re-com.box :refer [h-box v-box box]]
-            [re-com.misc :refer [input-text]]
+            [re-com.misc :refer [throbber input-text]]
             [re-com.text :refer [label title]]
             [re-com.tabs :refer [horizontal-tabs]]
             [cljs-http.client :as http]
@@ -211,11 +211,15 @@
    [:div  (input-element :cache-produto :cache-produto "Produto" identity) ]
    [:div (input-com-regex (input-element :cache-preco :cache-preco "Preco" identity) #"^[0-9]*(\.[0-9]{0,2})?$")]
    [:div  (input-element :cache-local :cache-local "Local" identity)]
-   [button :class "btn-primary"
-    :label "Cadastra" 
-    :on-click #(rf/dispatch [:cadastra {:nome @(rf/subscribe [:cache-produto])
-                                        :local @(rf/subscribe [:cache-local])
-                                        :preco @(rf/subscribe [:cache-preco])}])]
+   [h-box :children
+    [[box :align :center :justify :around :child
+      [:div [button :class "btn-primary"
+             :label "Cadastra" 
+             :on-click #(rf/dispatch [:cadastra {:nome @(rf/subscribe [:cache-produto])
+                                                 :local @(rf/subscribe [:cache-local])
+                                                 :preco @(rf/subscribe [:cache-preco])}])]]]
+     (when (not (str/blank? @(rf/subscribe [:resposta-cadastro])))
+       [:div [throbber]])]]
    [:div [titulo "Produtos" :level2]]
    [:div
     (for [item @(rf/subscribe [:mercado])] ^{:key (gen-key)}
@@ -237,9 +241,7 @@
   [horizontal-tabs 
    :model @(rf/subscribe [:view-id])
    :tabs [{:id "/lista-compras" :label "Lista de Compras"} {:id "/" :label "Cadastro"}]
-   :on-change #(rf/dispatch [:altera-view %])]
-  #_[h-box :children [[box :child (menu-compras)] 
-                    [box :child (menu-cadastro)]]])
+   :on-change #(rf/dispatch [:altera-view %])])
 
 (defn home-page []
   [v-box
@@ -321,5 +323,4 @@
   (accountant/dispatch-current!)
   (mount-root))
 
-(enable-console-print!)
 (rf/dispatch [:consulta-mercado])
