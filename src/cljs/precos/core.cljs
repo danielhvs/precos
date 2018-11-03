@@ -188,12 +188,6 @@
       (doall
        (reset! visao @(rf/subscribe [:produtos]))
        [:div
-        #_(when-let [v (first (sort-by :preco @visao))]
-          [:table
-           [:caption "Mais barato"]
-           [:tbody
-            (colunas-tabela)
-            (elemento v)]])
         (when (not (empty? @visao))
           [:table {:class "table"}
            [:tbody
@@ -256,11 +250,15 @@
 
 (defn colunas-tabela-compras []
   [:tr 
+   [:td {:style (estilo-centro)} "Estoque"]
    [:td {:style (estilo-centro)} "Produto"] 
-   [:td {:style (estilo-centro)} "Estoque"]])
+   [:td {:style (estilo-centro)} "Preco"] 
+   [:td {:style (estilo-centro)} "Local"] 
+   [:td {:style (estilo-centro)} "Data"] 
+   ])
 
 (defn entrada-estoque [p]
-  [box :align :center :justify :around :child 
+  (box-centro
    [:div
     [md-circle-icon-button
      :md-icon-name "zmdi-minus"
@@ -268,14 +266,22 @@
     [label :style {:padding "12px"} :label [:font {:size 42} (:estoque p)]]
     [md-circle-icon-button
      :md-icon-name "zmdi-plus"
-     :on-click #(rf/dispatch [:update-estoque (assoc p :estoque (inc (js/parseInt (:estoque p))))]) ]]])
+     :on-click #(rf/dispatch [:update-estoque (assoc p :estoque (inc (js/parseInt (:estoque p))))]) ]]))
+
+(defn label-mercado [texto]
+  [:td {:style (estilo-centro)}
+   [:font {:size 12} texto]])
 
 (defn elemento-compras [p] ^{:key (gen-key)}
   [:tr 
+   [:td [entrada-estoque p]]
    [:td {:style (conj (estilo-centro) (estilo-compra p)) 
          :on-click #(rf/dispatch [:toggle-comprar p])}
-    [:font {:size 42} (:nome p)]] 
-   [:td [entrada-estoque p]]])
+    (label-mercado (:nome p))] 
+   (label-mercado (:preco p))
+   (label-mercado (:local p))
+   (label-mercado (:data p))
+   ])
 
 (defn tabela-compras []
   (fn []
