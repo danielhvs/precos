@@ -106,8 +106,6 @@
   (formata "R$ " p ""))
 (defn formata-data [p]
   p)
-(defn ->reais [p]
-  (double p))
 (defn operacao [op] 
   (str servidor op))
 
@@ -151,9 +149,13 @@
 
 ;; -------------------------
 ;; Componentes
+(defn input-com-regex [entrada regex]
+  (conj entrada :validation-regex regex))
+
 (defn input-element
   [value funcao placeholder f]
-  [input-text :placeholder placeholder
+  [input-text
+   :placeholder placeholder
    :model (str @(rf/subscribe [value]))
    :on-change #(rf/dispatch [funcao (f %)])])
 
@@ -203,7 +205,7 @@
   [:div
    [:div (titulo "Cadastro" :level1)]
    [:div  (input-element :cache-produto :cache-produto "Produto" identity) ]
-   [:div  (input-element :cache-preco :cache-preco "Preco" ->reais)]
+   [:div (input-com-regex (input-element :cache-preco :cache-preco "Preco" identity) #"^[0-9]*(\,[0-9]{0,2})?$")]
    [:div  (input-element :cache-local :cache-local "Local" identity)]
    [button :class "btn-primary"
     :label "Cadastra" 
