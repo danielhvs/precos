@@ -265,7 +265,7 @@
     [md-circle-icon-button
      :md-icon-name "zmdi-minus"
      :on-click #(rf/dispatch [:update-estoque (assoc p :estoque (dec (js/parseInt (:estoque p))))])]
-    [label :style {:padding "12px"} :label (:estoque p)]
+    [label :style {:padding "12px"} :label [:font {:size 42} (:estoque p)]]
     [md-circle-icon-button
      :md-icon-name "zmdi-plus"
      :on-click #(rf/dispatch [:update-estoque (assoc p :estoque (inc (js/parseInt (:estoque p))))]) ]]])
@@ -274,7 +274,7 @@
   [:tr 
    [:td {:style (conj (estilo-centro) (estilo-compra p)) 
          :on-click #(rf/dispatch [:toggle-comprar p])}
-    (:nome p)] 
+    [:font {:size 42} (:nome p)]] 
    [:td [entrada-estoque p]]])
 
 (defn tabela-compras []
