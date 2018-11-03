@@ -153,6 +153,16 @@
 
 ;; -------------------------
 ;; Componentes
+(defn box-centro [componente]
+  [box :align :center :justify :around :child componente])
+
+(defn feedback [resposta]
+  (if (not (str/blank? resposta)) 
+    [h-box :children [
+                      [:div [throbber]]
+                      (box-centro [:div [:label resposta]])]]
+    [:div]))
+
 (defn input-com-regex [entrada regex]
   (conj entrada :validation-regex regex))
 
@@ -218,8 +228,9 @@
              :on-click #(rf/dispatch [:cadastra {:nome @(rf/subscribe [:cache-produto])
                                                  :local @(rf/subscribe [:cache-local])
                                                  :preco @(rf/subscribe [:cache-preco])}])]]]
-     (when (not (str/blank? @(rf/subscribe [:resposta-cadastro])))
-       [:div [throbber]])]]
+     (feedback @(rf/subscribe [:resposta-cadastro]))
+     (feedback @(rf/subscribe [:resposta-mercado]))
+     ]]
    [:div [titulo "Produtos" :level2]]
    [:div
     (for [item @(rf/subscribe [:mercado])] ^{:key (gen-key)}
@@ -230,7 +241,6 @@
    [:div
     (for [p (distinct (map :local @(rf/subscribe [:produtos])))] ^{:key (gen-key)}
          [button :class "btn-secondary" :label (if (empty? p) "(vazio)!?" p) :on-click #(rf/dispatch [:cache-local p])])]
-   [:div [:label @(rf/subscribe [:resposta-cadastro])]]
    [:div [titulo (str "Historico " @(rf/subscribe [:nome-consultado])) :level2]]
    [:div [tabela]]
    [:div [debug]]
@@ -287,8 +297,8 @@
   [v-box :children [(header) 
                     [:div 
                      (titulo "Lista de Compras" :level1)
-                     [button :class "btn-primary" :label "Salva" :on-click #(rf/dispatch [:salva-mercado @(rf/subscribe [:mercado])])]
-                     [:div [:label @(rf/subscribe [:resposta-mercado])]]
+                     [h-box :children [[button :class "btn-primary" :label "Salva" :on-click #(rf/dispatch [:salva-mercado @(rf/subscribe [:mercado])])]
+                                       (feedback @(rf/subscribe [:resposta-mercado]))]]
                      [tabela-compras]]]]) 
 
 ;; -------------------------
