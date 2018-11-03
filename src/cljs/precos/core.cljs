@@ -12,6 +12,7 @@
             [re-com.text :refer [label title]]
             [re-com.tabs :refer [horizontal-tabs]]
             [cljs-http.client :as http]
+            [goog.string :as gstring]
             [cljs.core.async :refer [<!]]
             [accountant.core :as accountant]))
 
@@ -60,7 +61,10 @@
 (rf/reg-event-db :resposta-cadastro (fn [db [_ nova-resposta]] (assoc db :resposta-cadastro nova-resposta)))
 (rf/reg-event-db :cache-produto (fn [db [_ nova-cache]] (assoc db :cache-produto nova-cache)))
 (rf/reg-event-db :cache-local (fn [db [_ nova-cache]] (assoc db :cache-local nova-cache)))
-(rf/reg-event-db :cache-preco (fn [db [_ nova-cache]] (assoc db :cache-preco nova-cache)))
+(rf/reg-event-db :cache-preco (fn [db [_ nova-cache]] (assoc db :cache-preco
+                                                             (if (str/includes? nova-cache ".") 
+                                                               nova-cache
+                                                               (gstring/format "%.2f" (/ (js/parseInt nova-cache) 100))))))
 (rf/reg-event-db :produtos (fn [db [_ novo]] (assoc db :produtos novo)))
 (rf/reg-event-db :altera-view (fn [db [_ novo]] 
                                 (secretary/dispatch! novo)
@@ -205,7 +209,7 @@
   [:div
    [:div (titulo "Cadastro" :level1)]
    [:div  (input-element :cache-produto :cache-produto "Produto" identity) ]
-   [:div (input-com-regex (input-element :cache-preco :cache-preco "Preco" identity) #"^[0-9]*(\,[0-9]{0,2})?$")]
+   [:div (input-com-regex (input-element :cache-preco :cache-preco "Preco" identity) #"^[0-9]*(\.[0-9]{0,2})?$")]
    [:div  (input-element :cache-local :cache-local "Local" identity)]
    [button :class "btn-primary"
     :label "Cadastra" 
