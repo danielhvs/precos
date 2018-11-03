@@ -259,23 +259,22 @@
    [:td {:style (estilo-centro)} "Produto"] 
    [:td {:style (estilo-centro)} "Preco"] 
    [:td {:style (estilo-centro)} "Local"] 
-   [:td {:style (estilo-centro)} "Data"] 
    ])
 
 (defn entrada-estoque [p]
   (box-centro
    [:div
-    [md-circle-icon-button
-     :md-icon-name "zmdi-minus"
+    [button :class "btn-xs"
+     :label "-"
      :on-click #(rf/dispatch [:update-estoque (assoc p :estoque (dec (js/parseInt (:estoque p))))])]
-    [label :style {:padding "12px"} :label [:font {:size 42} (:estoque p)]]
-    [md-circle-icon-button
-     :md-icon-name "zmdi-plus"
+    [label :style {:padding "2px"} :label (:estoque p)]
+    [button :class "btn-xs"
+     :label "+"
      :on-click #(rf/dispatch [:update-estoque (assoc p :estoque (inc (js/parseInt (:estoque p))))]) ]]))
 
 (defn label-mercado [texto]
-  [:td {:style (estilo-centro)}
-   [:font {:size 12} texto]])
+  [:td {:style (conj (estilo-centro))}
+   [:font {:size 2}] texto])
 
 (defn elemento-compras [p] ^{:key (gen-key)}
   [:tr 
@@ -285,7 +284,6 @@
     (label-mercado (:nome p))] 
    (label-mercado (formata-preco (:preco p)))
    (label-mercado (:local p))
-   (label-mercado (:data p))
    ])
 
 (defn tabela-compras []
