@@ -299,11 +299,11 @@
 
 (defn lista-compras []
   [v-box :children [(header) 
-                    [:div 
-                     (titulo "Lista de Compras" :level1)
-                     [h-box :children [[button :class "btn-primary" :label "Salva" :on-click #(rf/dispatch [:salva-mercado @(rf/subscribe [:mercado])])]
-                                       (feedback @(rf/subscribe [:resposta-mercado]))]]
-                     [tabela-compras]]]]) 
+                    (titulo "Lista de Compras" :level1)
+                    [h-box :children [[button :class "btn-primary" :label "Salva" :on-click #(rf/dispatch [:salva-mercado @(rf/subscribe [:mercado])])]
+                                      (feedback @(rf/subscribe [:resposta-mercado]))]]
+                    [gap :size "2em"]
+                    [tabela-compras]]]) 
 
 ;; -------------------------
 ;; Routes
