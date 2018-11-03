@@ -105,12 +105,17 @@
   (str prefixo p sufixo))
 (defn formata-aspas [p]
   (formata "'" p "'"))
-(defn formata-reais [p]
-  (formata "R$ " p ""))
 (defn formata-data [p]
   p)
 (defn operacao [op] 
   (str servidor op))
+(defn nao-tem-preco [preco]
+  (> preco 999998))
+(defn formata-preco [preco]
+  (if (nao-tem-preco preco) 
+    "-"
+    (gstring/format "R$ %.2f" preco)))
+
 
 (defn salva-mercado [mercado]
   (rf/dispatch [:resposta-mercado "Salvando lista de mercado..."])
@@ -178,7 +183,7 @@
 (defn elemento [v] ^{:key (gen-key)}
   [:tr 
    [:td (formata-aspas (:nome v))] 
-   [:td (formata-reais (:preco v))] 
+   [:td (formata-preco (:preco v))] 
    [:td (formata-data (:data v))] 
    [:td (formata-aspas (:local v))]])
 
@@ -278,7 +283,7 @@
    [:td {:style (conj (estilo-centro) (estilo-compra p)) 
          :on-click #(rf/dispatch [:toggle-comprar p])}
     (label-mercado (:nome p))] 
-   (label-mercado (:preco p))
+   (label-mercado (formata-preco (:preco p)))
    (label-mercado (:local p))
    (label-mercado (:data p))
    ])
