@@ -118,7 +118,7 @@
   (go
     (let [response (<! (try (http/post (operacao "salva-mercado") {:json-params mercado :with-credentials? false})
                             (catch :default e
-                              (reset! a-debug e))))]
+                              (rf/dispatch [:resposta-mercado (str e)]))))]
       (rf/dispatch [:update-mercado (reverse (sort-by :comprar (json->clj (:body response))))])
       (rf/dispatch [:resposta-mercado ""]))))
 
@@ -127,7 +127,7 @@
   (go
     (let [response (<! (try (http/get (operacao "consulta-mercado") {:with-credentials? false})
                             (catch :default e
-                              (reset! a-debug e))))]
+                              (rf/dispatch [:resposta-mercado (str e)]))))]
       (rf/dispatch [:update-mercado (reverse (sort-by :comprar (json->clj (:body response))))])
       (rf/dispatch [:resposta-mercado ""]))))
 
@@ -136,7 +136,7 @@
   (go
     (let [response (<! (try (http/get (operacao (str "consulta/" nome)) {:with-credentials? false})
                             (catch :default e
-                              (reset! a-debug e))))]
+                              (rf/dispatch [:resposta-mercado (str e)]))))]
       (rf/dispatch [:produtos (json->clj (:body response))])
       (rf/dispatch [:resposta-cadastro ""]))))
 
@@ -146,7 +146,7 @@
     (let [p {:nome nome :preco preco :local local} 
           response (<! (try (http/post (operacao "cadastra") {:json-params p :with-credentials? false})
                             (catch :default e
-                              (reset! a-debug e))))]
+                              (rf/dispatch [:resposta-mercado (str e)]))))]
       (rf/dispatch [:resposta-cadastro (str "Cadastrado " nome " com sucesso")])
       (rf/dispatch [:consulta nome])
       (rf/dispatch [:consulta-mercado]))))
@@ -203,12 +203,7 @@
                  (elemento v))]])]))))
 
 (defn debug []
-  [:div [:label (str @a-debug)]])
-
-(defn menu-compras []
-  [:a ^{:key (gen-key)} {:href "/lista-compras"} "Lista de compras"])
-(defn menu-cadastro []
-  [:a ^{:key (gen-key)} {:href "/"} "Cadastro"])
+  [:div [:label @(rf/subscribe [:resposta-mercado])]])
 
 ;; -------------------------
 ;; Views
