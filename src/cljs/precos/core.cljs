@@ -7,7 +7,7 @@
             [cljs-time.format :as f]
             [cljs-time.local :as l]
             [re-com.buttons :refer [button md-circle-icon-button]]
-            [re-com.box :refer [h-box v-box box]]
+            [re-com.box :refer [h-box v-box box gap]]
             [re-com.misc :refer [throbber input-text]]
             [re-com.text :refer [label title]]
             [re-com.tabs :refer [horizontal-tabs]]
@@ -96,7 +96,6 @@
 
 ;; -------------------------
 ;; Estado
-(defonce a-debug (atom ""))
 (defonce servidor "https://infinite-crag-89428.herokuapp.com/")
 #_(defonce servidor "http://localhost:3000/")
 
@@ -202,9 +201,6 @@
             (for [v @visao] ^{:key (gen-key)}
                  (elemento v))]])]))))
 
-(defn debug []
-  [:div [:label @(rf/subscribe [:resposta-mercado])]])
-
 ;; -------------------------
 ;; Views
 (defn titulo [t l]
@@ -212,33 +208,35 @@
 
 (defn view-cadastro []
   [:div
-   [:div (titulo "Cadastro" :level1)]
-   [:div  (input-element :cache-produto :cache-produto "Produto" identity) ]
-   [:div (input-com-regex (input-element :cache-preco :cache-preco "Preco" identity) #"^[0-9]*(\.[0-9]{0,2})?$")]
-   [:div  (input-element :cache-local :cache-local "Local" identity)]
-   [h-box :children
-    [[box :align :center :justify :around :child
-      [:div [button :class "btn-primary"
-             :label "Cadastra" 
-             :on-click #(rf/dispatch [:cadastra {:nome @(rf/subscribe [:cache-produto])
-                                                 :local @(rf/subscribe [:cache-local])
-                                                 :preco @(rf/subscribe [:cache-preco])}])]]]
-     (feedback @(rf/subscribe [:resposta-cadastro]))
-     (feedback @(rf/subscribe [:resposta-mercado]))
-     ]]
-   [:div [titulo "Produtos" :level2]]
-   [:div
-    (for [item @(rf/subscribe [:mercado])] ^{:key (gen-key)}
-         [button :style (estilo-compra item) :label (:nome item) :on-click #(do 
-                                                                              (rf/dispatch [:cache-produto (:nome item)])
-                                                                              (rf/dispatch [:consulta (:nome item)]))])]
-   [:div [titulo (str "Locais " @(rf/subscribe [:nome-consultado])) :level2]]
-   [:div
-    (for [p (distinct (map :local @(rf/subscribe [:produtos])))] ^{:key (gen-key)}
-         [button :class "btn-secondary" :label (if (empty? p) "(vazio)!?" p) :on-click #(rf/dispatch [:cache-local p])])]
-   [:div [titulo (str "Historico " @(rf/subscribe [:nome-consultado])) :level2]]
-   [:div [tabela]]
-   [:div [debug]]
+   [v-box :children 
+    [[:div (titulo "Cadastro" :level1)]
+     [:div  (input-element :cache-produto :cache-produto "Produto" identity) ]
+     [:div (input-com-regex (input-element :cache-preco :cache-preco "Preco" identity) #"^[0-9]*(\.[0-9]{0,2})?$")]
+     [:div  (input-element :cache-local :cache-local "Local" identity)]
+     [gap :size "2em"]
+     [h-box :children
+      [(box-centro
+        [:div [button :class "btn-primary"
+               :label "Cadastra" 
+               :on-click #(rf/dispatch [:cadastra {:nome @(rf/subscribe [:cache-produto])
+                                                   :local @(rf/subscribe [:cache-local])
+                                                   :preco @(rf/subscribe [:cache-preco])}])]])
+       (feedback @(rf/subscribe [:resposta-cadastro]))
+       (feedback @(rf/subscribe [:resposta-mercado]))
+       ]]
+     [gap :size "2em"]
+     [:div [titulo "Produtos" :level2]]
+     [:div
+      (for [item @(rf/subscribe [:mercado])] ^{:key (gen-key)}
+           [button :style (estilo-compra item) :label (:nome item) :on-click #(do 
+                                                                                (rf/dispatch [:cache-produto (:nome item)])
+                                                                                (rf/dispatch [:consulta (:nome item)]))])]
+     [gap :size "2em"]
+     [:div [titulo (str "Locais " @(rf/subscribe [:nome-consultado])) :level2]]
+     [:div
+      (for [p (distinct (map :local @(rf/subscribe [:produtos])))] ^{:key (gen-key)}
+           [button :class "btn-secondary" :label (if (empty? p) "(vazio)!?" p) :on-click #(rf/dispatch [:cache-local p])])]
+     [:div [tabela]]]]
    ]
 )
 
