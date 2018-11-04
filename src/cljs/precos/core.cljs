@@ -22,6 +22,16 @@
 (declare cadastra)
 (declare header)
 
+(defn normaliza [nome]
+  "Faz kebab-case e remove 'de'"
+  (let [palavras
+        (filter #(and (not (empty? %)))
+                (map str/lower-case (str/split nome #" ")))]
+    (str/replace 
+     (reduce #(str %1 "-" %2) palavras)
+     #"-de-"
+     "-")))
+
 (defn estilo-compra [p]
   (if (:comprar p) 
     {:background-color "coral"}
@@ -59,7 +69,7 @@
 (rf/reg-event-db :update-mercado (fn [db [_ novo-mercado]] (assoc db :mercado (filter #(not (nil? (:nome %))) novo-mercado))))
 (rf/reg-event-db :resposta-mercado (fn [db [_ nova-resposta]] (assoc db :resposta-mercado nova-resposta)))
 (rf/reg-event-db :resposta-cadastro (fn [db [_ nova-resposta]] (assoc db :resposta-cadastro nova-resposta)))
-(rf/reg-event-db :cache-produto (fn [db [_ nova-cache]] (assoc db :cache-produto nova-cache)))
+(rf/reg-event-db :cache-nome (fn [db [_ nova-cache]] (assoc db :cache-nome (normaliza nova-cache))))
 (rf/reg-event-db :cache-local (fn [db [_ nova-cache]] (assoc db :cache-local nova-cache)))
 (rf/reg-event-db :cache-preco (fn [db [_ nova-cache]] (assoc db :cache-preco
                                                              (if (str/includes? nova-cache ".") 
@@ -80,7 +90,7 @@
 (rf/reg-sub :mercado (fn [db _] (:mercado db)))
 (rf/reg-sub :resposta-mercado (fn [db _] (:resposta-mercado db)))
 (rf/reg-sub :resposta-cadastro (fn [db _] (:resposta-cadastro db)))
-(rf/reg-sub :cache-produto (fn [db _] (:cache-produto db)))
+(rf/reg-sub :cache-nome (fn [db _] (:cache-nome db)))
 (rf/reg-sub :cache-preco (fn [db _] (:cache-preco db)))
 (rf/reg-sub :cache-local (fn [db _] (:cache-local db)))
 (rf/reg-sub :produtos (fn [db _] (:produtos db)))
@@ -211,7 +221,7 @@
   [:div
    [v-box :children 
     [[:div (titulo "Cadastro" :level1)]
-     [:div  (input-element :cache-produto :cache-produto "Produto" identity) ]
+     [:div  (input-element :cache-nome :cache-nome "Produto" identity) ]
      [:div (input-com-regex (input-element :cache-preco :cache-preco "Preco" identity) #"^[0-9]*(\.[0-9]{0,2})?$")]
      [:div  (input-element :cache-local :cache-local "Local" identity)]
      [gap :size "2em"]
@@ -219,7 +229,7 @@
       [(box-centro
         [:div [button :class "btn-primary"
                :label "Cadastra" 
-               :on-click #(rf/dispatch [:cadastra {:nome @(rf/subscribe [:cache-produto])
+               :on-click #(rf/dispatch [:cadastra {:nome @(rf/subscribe [:cache-nome])
                                                    :local @(rf/subscribe [:cache-local])
                                                    :preco @(rf/subscribe [:cache-preco])}])]])
        (feedback @(rf/subscribe [:resposta-cadastro]))
@@ -230,7 +240,7 @@
      [:div
       (for [item @(rf/subscribe [:mercado])] ^{:key (gen-key)}
            [button :style (estilo-compra item) :label (:nome item) :on-click #(do 
-                                                                                (rf/dispatch [:cache-produto (:nome item)])
+                                                                                (rf/dispatch [:cache-nome (:nome item)])
                                                                                 (rf/dispatch [:consulta (:nome item)]))])]
      [gap :size "2em"]
      [:div [titulo (str "Locais " @(rf/subscribe [:nome-consultado])) :level2]]
