@@ -235,13 +235,13 @@
        (feedback @(rf/subscribe [:resposta-cadastro]))
        (feedback @(rf/subscribe [:resposta-mercado]))
        ]]
+     [gap :size "1em"]
+     [button :label "Consulta" :class "btn-secondary" :on-click #(rf/dispatch [:consulta @(rf/subscribe [:cache-nome])])]
      [gap :size "2em"]
      [:div [titulo "Produtos" :level2]]
      [:div
       (for [item @(rf/subscribe [:mercado])] ^{:key (gen-key)}
-           [button :style (estilo-compra item) :label (:nome item) :on-click #(do 
-                                                                                (rf/dispatch [:cache-nome (:nome item)])
-                                                                                (rf/dispatch [:consulta (:nome item)]))])]
+           [button :style (estilo-compra item) :label (:nome item) :on-click #(rf/dispatch [:cache-nome (:nome item)])])]
      [gap :size "2em"]
      [:div [titulo (str "Locais " @(rf/subscribe [:nome-consultado])) :level2]]
      [:div
@@ -293,7 +293,7 @@
    [:td [entrada-estoque p]]
    [:td {:style (conj (estilo-centro) (estilo-compra p)) 
          :on-click #(rf/dispatch [:toggle-comprar p])}
-    (label-mercado (:nome p))] 
+    [:font {:size 2}] (:nome p)] 
    (label-mercado (formata-preco (:preco p)))
    (label-mercado (:local p))
    ])
