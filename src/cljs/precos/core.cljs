@@ -96,8 +96,8 @@
 
 ;; -------------------------
 ;; Estado
-(defonce servidor "https://infinite-crag-89428.herokuapp.com/")
-#_(defonce servidor "http://localhost:3000/")
+#_(defonce servidor "https://infinite-crag-89428.herokuapp.com/")
+(defonce servidor "http://localhost:3000/")
 
 ;; -------------------------
 ;; Funcoes
@@ -117,7 +117,7 @@
     (gstring/format "R$ %.2f" preco)))
 
 (defn ordena-mercado [mercado]
-  (sort-by :nome mercado))
+  (sort-by (juxt :estoque :nome) mercado))
 
 (defn salva-mercado [mercado]
   (rf/dispatch [:resposta-mercado "Salvando lista de mercado..."])
