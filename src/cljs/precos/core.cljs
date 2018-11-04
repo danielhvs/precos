@@ -116,6 +116,8 @@
     "-"
     (gstring/format "R$ %.2f" preco)))
 
+(defn ordena-mercado [mercado]
+  (sort-by :nome mercado))
 
 (defn salva-mercado [mercado]
   (rf/dispatch [:resposta-mercado "Salvando lista de mercado..."])
@@ -123,7 +125,7 @@
     (let [response (<! (try (http/post (operacao "salva-mercado") {:json-params mercado :with-credentials? false})
                             (catch :default e
                               (rf/dispatch [:resposta-mercado (str e)]))))]
-      (rf/dispatch [:update-mercado (reverse (sort-by :comprar (json->clj (:body response))))])
+      (rf/dispatch [:update-mercado (ordena-mercado (json->clj (:body response)))])
       (rf/dispatch [:resposta-mercado ""]))))
 
 (defn consulta-mercado []
@@ -132,7 +134,7 @@
     (let [response (<! (try (http/get (operacao "consulta-mercado") {:with-credentials? false})
                             (catch :default e
                               (rf/dispatch [:resposta-mercado (str e)]))))]
-      (rf/dispatch [:update-mercado (reverse (sort-by :comprar (json->clj (:body response))))])
+      (rf/dispatch [:update-mercado (ordena-mercado (json->clj (:body response)))])
       (rf/dispatch [:resposta-mercado ""]))))
 
 (defn consulta [nome]
