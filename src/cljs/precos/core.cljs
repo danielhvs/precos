@@ -37,6 +37,8 @@
     {:background-color "coral"}
     {:background-color "skyblue"}))
 
+
+;; EVENTS
 (rf/reg-event-db              ;; sets up initial application state
   :initialize                 ;; usage:  (dispatch [:initialize])
   (fn [_ _]                   ;; the two parameters are not important here, so use _
@@ -85,8 +87,7 @@
 (rf/reg-event-db :consulta (fn [db [_ nome]] (consulta nome) (assoc db :nome-consultado nome)))
 (rf/reg-event-db :cadastra (fn [db [_ p]] (cadastra p) db))
 
-;; -- Domino 4 - Query  -------------------------------------------------------
-
+;; SUBS
 (rf/reg-sub :mercado (fn [db _] (:mercado db)))
 (rf/reg-sub :resposta-mercado (fn [db _] (:resposta-mercado db)))
 (rf/reg-sub :resposta-cadastro (fn [db _] (:resposta-cadastro db)))
@@ -97,8 +98,7 @@
 (rf/reg-sub :view-id (fn [db _] (:view-id db)))
 (rf/reg-sub :nome-consultado (fn [db _] (:nome-consultado db)))
 
-;; -- Domino 5 - View Functions ----------------------------------------------
-
+;; VIEW
 ;; Parse json
 (defn json->clj [json] (js->clj (.parse js/JSON json) :keywordize-keys true))
 (defn gen-key []
@@ -220,20 +220,20 @@
 (defn view-cadastro []
   [:div
    [v-box :children 
-    [[:div (titulo "Cadastro" :level1)]
-     [:div  (input-element :cache-nome :cache-nome "Produto" identity) ]
-     [:div (input-com-regex (input-element :cache-preco :cache-preco "Preco" identity) #"^[0-9]*(\.[0-9]{0,2})?$")]
-     [:div  (input-element :cache-local :cache-local "Local" identity)]
+    [[:div [titulo "Cadastro" :level1]]
+     [:div [input-element :cache-nome :cache-nome "Produto" identity] ]
+     [:div [input-com-regex (input-element :cache-preco :cache-preco "Preco" identity) #"^[0-9]*(\.[0-9]{0,2})?$"]]
+     [:div [input-element :cache-local :cache-local "Local" identity]]
      [gap :size "2em"]
      [h-box :children
-      [(box-centro
+      [[box-centro
         [:div [button :class "btn-primary"
                :label "Cadastra" 
                :on-click #(rf/dispatch [:cadastra {:nome @(rf/subscribe [:cache-nome])
                                                    :local @(rf/subscribe [:cache-local])
-                                                   :preco @(rf/subscribe [:cache-preco])}])]])
-       (feedback @(rf/subscribe [:resposta-cadastro]))
-       (feedback @(rf/subscribe [:resposta-mercado]))
+                                                   :preco @(rf/subscribe [:cache-preco])}])]]]
+       [feedback @(rf/subscribe [:resposta-cadastro])]
+       [feedback @(rf/subscribe [:resposta-mercado])]
        ]]
      [gap :size "1em"]
      [button :label "Consulta" :class "btn-secondary" :on-click #(rf/dispatch [:consulta @(rf/subscribe [:cache-nome])])]
@@ -259,8 +259,8 @@
 
 (defn home-page []
   [v-box
-   :children [(header)
-              [box :child (view-cadastro)]]])
+   :children [[header]
+              [box :child [view-cadastro]]]])
 
 (defn estilo-centro []
   {:text-align "center" :vertical-align "middle"})
@@ -299,17 +299,16 @@
    ])
 
 (defn tabela-compras []
-  (fn []
-    [:div
-     [:table {:class "table"}
-      [:tbody
-       (colunas-tabela-compras)
-       (for [p @(rf/subscribe [:mercado])] ^{:key (gen-key)}
-            (elemento-compras p))]]]))
+  [:div
+   [:table {:class "table"}
+    [:tbody
+     [colunas-tabela-compras]
+     (for [p @(rf/subscribe [:mercado])] ^{:key (gen-key)}
+          [elemento-compras p])]]])
 
 (defn lista-compras []
-  [v-box :children [(header) 
-                    (titulo "Lista de Compras" :level1)
+  [v-box :children [[header] 
+                    [titulo "Lista de Compras" :level1]
                     [h-box :children [[button :class "btn-primary" :label "Salva" :on-click #(rf/dispatch [:salva-mercado @(rf/subscribe [:mercado])])]
                                       (feedback @(rf/subscribe [:resposta-mercado]))]]
                     [gap :size "2em"]
