@@ -162,6 +162,18 @@
                 :on-success [:sucesso-salva-mercado]
                 :on-failure [:falha-salva-mercado]}}))
 
+(rf/reg-fx
+  :alterar-view
+  (fn [{:keys [nova-view db]}]
+    (secretary/dispatch! nova-view)
+    (rf/dispatch [:nova-view nova-view])))
+
+(rf/reg-event-fx 
+ :altera-view 
+ (fn [{:keys [db]} [_ novo]] 
+   {:db db
+    :alterar-view {:nova-view novo}}))
+
 (rf/reg-event-db
   :initialize
   (fn [_ _]
@@ -179,7 +191,6 @@
                       (assoc item :comprar (not (:comprar item))) 
                       i)) 
                   mercado)))))
-
 (rf/reg-event-db                
   :update-estoque
   (fn [db [_ {:keys [nome comprar estoque]} f]] 
@@ -192,6 +203,7 @@
                       i)) 
                   mercado)))))
 
+(rf/reg-event-db :nova-view (fn [db [_ novo]] (assoc db :view-id novo)))
 (rf/reg-event-db :cache-nome (fn [db [_ nova-cache]] (assoc db :cache-nome (normaliza nova-cache))))
 (rf/reg-event-db :cache-local (fn [db [_ nova-cache]] (assoc db :cache-local nova-cache)))
 (rf/reg-event-db :cache-preco (fn [db [_ nova-cache]] (assoc db :cache-preco
@@ -199,9 +211,7 @@
                                                                nova-cache
                                                                (gstring/format "%.2f" (/ (js/parseInt nova-cache) 100))))))
 (rf/reg-event-db :produtos (fn [db [_ novo]] (assoc db :produtos novo)))
-(rf/reg-event-db :altera-view (fn [db [_ novo]] 
-                                (secretary/dispatch! novo)
-                                (assoc db :view-id novo)))
+
 
 ;; SUBS
 (rf/reg-sub :mercado (fn [db _] (:mercado db)))
