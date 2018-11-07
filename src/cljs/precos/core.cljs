@@ -84,6 +84,7 @@
   :sucesso-consulta-produto
   (fn [db [_ result]]
     (assoc db
+      :nome-consultado (:nome (first result))
       :resposta-cadastro ""
       :produtos result)))
 
@@ -159,7 +160,8 @@
 (rf/reg-event-db
   :initialize
   (fn [_ _]
-    {:view-id "/"})) 
+    {:view-id "/"
+     :debug {:servidor servidor}})) 
 
 (rf/reg-event-db                
   :toggle-comprar
@@ -208,10 +210,9 @@
 (rf/reg-sub :produtos (fn [db _] (:produtos db)))
 (rf/reg-sub :view-id (fn [db _] (:view-id db)))
 (rf/reg-sub :nome-consultado (fn [db _] (:nome-consultado db)))
+(rf/reg-sub :debug (fn [db _] (:debug db)))
 
 ;; VIEW
-;; Parse json
-(defn json->clj [json] (js->clj (.parse js/JSON json) :keywordize-keys true))
 (defn gen-key []
   (gensym "key-"))
 
@@ -248,17 +249,14 @@
    [:td (formata-aspas (:local v))]])
 
 (defn tabela []
-  (let [visao (atom [])]
-    (fn []
-      (doall
-       (reset! visao @(rf/subscribe [:produtos]))
-       [:div
-        (when (not (empty? @visao))
-          [:table {:class "table"}
-           [:tbody
-            (colunas-tabela)
-            (for [v @visao] ^{:key (gen-key)}
-                 (elemento v))]])]))))
+  (let [visao (rf/subscribe [:produtos])]
+    [:div
+     (when (not (empty? @visao))
+       [:table {:class "table"}
+        [:tbody
+         (colunas-tabela)
+         (for [v @visao] ^{:key (gen-key)}
+              (elemento v))]])]))
 
 ;; -------------------------
 ;; Views
@@ -296,6 +294,7 @@
      [:div
       (for [p (distinct (map :local @(rf/subscribe [:produtos])))] ^{:key (gen-key)}
            [button :class "btn-secondary" :label (if (empty? p) "(vazio)!?" p) :on-click #(rf/dispatch [:cache-local p])])]
+     [:div [titulo (str "Historico " @(rf/subscribe [:nome-consultado])) :level2]]
      [:div [tabela]]]]
    ]
 )
@@ -306,10 +305,14 @@
    :tabs [{:id "/lista-compras" :label "Lista de Compras"} {:id "/" :label "Cadastro"}]
    :on-change #(rf/dispatch [:altera-view %])])
 
+(defn footer []
+  [:div (str @(rf/subscribe [:debug]))])
+
 (defn home-page []
   [v-box
    :children [[header]
-              [box :child [view-cadastro]]]])
+              [box :child [view-cadastro]]
+              [footer]]])
 
 (defn estilo-centro []
   {:text-align "center" :vertical-align "middle"})
