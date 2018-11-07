@@ -63,50 +63,49 @@
 
 
 ;; EVENTS
+(defn registra-feedback [db chave valor]
+  (assoc db 
+    :feedback (assoc (:feedback db) chave valor)))
+
 (rf/reg-event-db
  :falha-consulta-mercado
  (fn [db [_ result]]
-   (assoc db 
-     :feedback (assoc (:feedback db) :resposta-mercado (str "Erro: " (:status-text result))))))
+   (registra-feedback db :resposta-mercado (str "Erro: " (:status-text result)))))
 
 (rf/reg-event-db
   :sucesso-consulta-mercado
   (fn [db [_ result]]
-    (assoc db
-      :feedback (assoc (:feedback db) :resposta-mercado "")
+    (assoc (registra-feedback db :resposta-mercado "")
       :mercado (filter #(not (nil? (:nome %))) result))))
 
 (rf/reg-event-db
   :falha-consulta-produto
   (fn [db [_ result]]
-    (assoc db 
-      :feedback (assoc (:feedback db) :resposta-cadastro (str "Erro: " (:status-text result))))))
+    (registra-feedback db :resposta-cadastro (str "Erro: " (:status-text result)))))
 
 (rf/reg-event-db
-  :sucesso-consulta-produto
-  (fn [db [_ result]]
-    (assoc db
-      :nome-consultado (:nome (first result))
-      :feedback (assoc (:feedback db) :resposta-cadastro "")
-      :produtos result)))
+ :sucesso-consulta-produto
+ (fn [db [_ result]]
+   (assoc
+       (registra-feedback db :resposta-cadastro "")
+     :nome-consultado (:nome (first result))
+     :produtos result)))
 
 (rf/reg-event-db
   :falha-cadastro-produto
   (fn [db [_ result]]
-    (assoc db 
-      :feedback (assoc (:feedback db) :resposta-cadastro (str "Erro: " (:status-text result))))))
+    (registra-feedback db :resposta-cadastro (str "Erro: " (:status-text result)))))
 
 (rf/reg-event-db
   :sucesso-cadastro-produto
   (fn [db [_ result]]
-    (assoc db 
-      :feedback (assoc (:feedback db) :resposta-cadastro (str "Cadastrado com sucesso " result))
+    (registra-feedback db :resposta-cadastro (str "Cadastrado com sucesso " result)
 )))
 
 (rf/reg-event-fx 
  :consulta-mercado 
  (fn [{:keys [db]} _] 
-   {:db (assoc db :feedback (assoc (:feedback db) :resposta-mercado "Consultando lista de mercado..."))
+   {:db (registra-feedback db :resposta-mercado "Consultando lista de mercado...")
    :http-xhrio {:method :get
                 :uri (operacao "consulta-mercado")
                 :timeout 5000
@@ -117,7 +116,7 @@
 (rf/reg-event-fx 
  :consulta
  (fn [{:keys [db]} [_ nome]] 
-   {:db (assoc db :feedback (assoc (:feedback db) :resposta-cadastro (str "Consultando " nome "...")))
+   {:db (registra-feedback db :resposta-cadastro (str "Consultando " nome "..."))
    :http-xhrio {:method :get
                 :uri (operacao (str "consulta/" nome))
                 :timeout 5000
@@ -128,7 +127,7 @@
 (rf/reg-event-fx 
  :cadastra
  (fn [{:keys [db]} [_ p]] 
-   {:db (assoc db :feedback (assoc (:feedback db) :resposta-cadastro (str "Cadastrando " p "...")))
+   {:db (registra-feedback db :resposta-cadastro (str "Cadastrando " p "..."))
    :http-xhrio {:method :post
                 :uri (operacao "cadastra")
                 :params p
@@ -141,18 +140,19 @@
 (rf/reg-event-db
   :falha-salva-mercado
   (fn [db [_ result]]
-    (assoc db :feedback (assoc (:feedback db) :resposta-mercado (str "Erro: " (:status-text result))))))
+    (registra-feedback db :resposta-mercado (str "Erro: " (:status-text result)))))
 
 (rf/reg-event-db
-  :sucesso-salva-mercado
-  (fn [db [_ result]]
-    (assoc db :feedback (assoc (:feedback db) :resposta-mercado "")
-           :mercado (filter #(not (nil? (:nome %))) (ordena-mercado result)))))
+ :sucesso-salva-mercado
+ (fn [db [_ result]]
+   (assoc
+       (registra-feedback db :resposta-mercado "")
+     :mercado (filter #(not (nil? (:nome %))) (ordena-mercado result)))))
 
 (rf/reg-event-fx 
  :salva-mercado
  (fn [{:keys [db]} [_ mercado]] 
-   {:db (assoc db :feedback (assoc (:feedback db) :resposta-mercado "Salvando lista de mercado..."))
+   {:db (registra-feedback db :resposta-mercado "Salvando lista de mercado...")
    :http-xhrio {:method :post
                 :uri (operacao "salva-mercado")
                 :params mercado
@@ -182,13 +182,13 @@
 
 (rf/reg-event-db                
   :update-estoque
-  (fn [db [_ {:keys [nome comprar estoque]}]] 
+  (fn [db [_ {:keys [nome comprar estoque]} f]] 
     (let [mercado (:mercado db)
           item (first (filter #(= nome (:nome %)) mercado))]
       (assoc db :mercado 
              (map (fn [i] 
                     (if (= item i) 
-                      (assoc item :estoque estoque) 
+                      (assoc item :estoque (f (js/parseInt estoque))) 
                       i)) 
                   mercado)))))
 
@@ -333,11 +333,11 @@
    [:div
     [button :class "btn-xs"
      :label "-"
-     :on-click #(rf/dispatch [:update-estoque (assoc p :estoque (dec (js/parseInt (:estoque p))))])]
+     :on-click #(rf/dispatch [:update-estoque p dec ])]
     [label :style {:padding "2px"} :label (:estoque p)]
     [button :class "btn-xs"
      :label "+"
-     :on-click #(rf/dispatch [:update-estoque (assoc p :estoque (inc (js/parseInt (:estoque p))))]) ]]])
+     :on-click #(rf/dispatch [:update-estoque p inc])]]])
 
 (defn label-mercado [texto]
   [:td {:style (conj (estilo-centro))}
@@ -349,8 +349,8 @@
    [:td {:style (conj (estilo-centro) (estilo-compra p)) 
          :on-click #(rf/dispatch [:toggle-comprar p])}
     [:font {:size 2}] (:nome p)] 
-   (label-mercado (formata-preco (:preco p)))
-   (label-mercado (:local p))
+   [label-mercado (formata-preco (:preco p))]
+   [label-mercado (:local p)]
    ])
 
 (defn tabela-compras []
@@ -364,7 +364,9 @@
 (defn lista-compras []
   [v-box :children [[header] 
                     [titulo "Lista de Compras" :level1]
-                    [h-box :children [[button :class "btn-primary" :label "Salva" :on-click #(rf/dispatch [:salva-mercado @(rf/subscribe [:mercado])])]
+                    [h-box :children [
+                                      [button :class "btn-primary" :label "Salva" :on-click #(rf/dispatch [:salva-mercado @(rf/subscribe [:mercado])])]
+                                      [button :class "btn-secondary" :label "Consulta Mercado" :on-click #(rf/dispatch [:consulta-mercado])]
                                       ]]
                     [feedback]
                     [gap :size "2em"]
