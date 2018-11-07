@@ -7,6 +7,7 @@
   :dependencies [[org.clojure/clojure "1.9.0"]
                  [ring-server "0.5.0"]
                  [re-frame "0.10.5"]
+                 [day8.re-frame/http-fx "0.1.6"]
                  [reagent "0.8.1"]
                  [re-com "2.1.0"]
                  [reagent-utils "0.3.1"]

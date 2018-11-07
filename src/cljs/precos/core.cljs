@@ -3,8 +3,10 @@
   (:require [reagent.core :as reagent :refer [atom]]
             [secretary.core :as secretary :include-macros true]
             [re-frame.core :as rf]
+            [day8.re-frame.http-fx]
             [clojure.string :as str]
             [cljs-time.format :as f]
+            [ajax.core :as ajax]
             [cljs-time.local :as l]
             [re-com.buttons :refer [button md-circle-icon-button]]
             [re-com.box :refer [h-box v-box box gap]]
@@ -21,6 +23,13 @@
 (declare consulta)
 (declare cadastra)
 (declare header)
+(def servidor "https://infinite-crag-89428.herokuapp.com/")
+#_(def servidor "http://localhost:3000/")
+
+;; -------------------------
+;; Funcoes
+(defn operacao [op] 
+  (str servidor op))
 
 (defn normaliza [nome]
   "Faz kebab-case e remove 'de'"
@@ -37,11 +46,119 @@
     {:background-color "coral"}
     {:background-color "skyblue"}))
 
+(defn formata [prefixo p sufixo]
+  (str prefixo p sufixo))
+(defn formata-aspas [p]
+  (formata "'" p "'"))
+(defn formata-data [p]
+  p)
+(defn nao-tem-preco [preco]
+  (> preco 999998))
+(defn formata-preco [preco]
+  (if (nao-tem-preco preco) 
+    "-"
+    (gstring/format "R$ %.2f" preco)))
+(defn ordena-mercado [mercado]
+  (sort-by (juxt :estoque :nome) mercado))
+
 
 ;; EVENTS
-(rf/reg-event-db              ;; sets up initial application state
-  :initialize                 ;; usage:  (dispatch [:initialize])
-  (fn [_ _]                   ;; the two parameters are not important here, so use _
+(rf/reg-event-db
+  :falha-consulta-mercado
+  (fn [db [_ result]]
+    (assoc db :resposta-mercado (str "Erro: " (:status-text result)))))
+
+(rf/reg-event-db
+  :sucesso-consulta-mercado
+  (fn [db [_ result]]
+    (assoc db
+      :resposta-mercado ""
+      :mercado (filter #(not (nil? (:nome %))) result))))
+
+(rf/reg-event-db
+  :falha-consulta-produto
+  (fn [db [_ result]]
+    (assoc db :resposta-cadastro (str "Erro: " (:status-text result)))))
+
+(rf/reg-event-db
+  :sucesso-consulta-produto
+  (fn [db [_ result]]
+    (assoc db
+      :resposta-cadastro ""
+      :produtos result)))
+
+(rf/reg-event-db
+  :falha-cadastro-produto
+  (fn [db [_ result]]
+    (assoc db :resposta-cadastro (str "Erro: " (:status-text result)))))
+
+(rf/reg-event-db
+  :sucesso-cadastro-produto
+  (fn [db [_ result]]
+    (assoc db :resposta-cadastro (str "Cadastrado com sucesso " result))))
+
+(rf/reg-event-fx 
+ :consulta-mercado 
+ (fn [{:keys [db]} _] 
+  {:db (assoc db :resposta-mercado "Consultando lista de mercado...")
+   :http-xhrio {:method :get
+                :uri (operacao "consulta-mercado")
+                :timeout 5000
+                :response-format (ajax/json-response-format {:keywords? true})
+                :on-success [:sucesso-consulta-mercado]
+                :on-failure [:falha-consulta-mercado]}} ))
+
+(rf/reg-event-fx 
+ :consulta
+ (fn [{:keys [db]} [_ nome]] 
+  {:db (assoc db :resposta-cadastro (str "Consultando " nome "..."))
+   :http-xhrio {:method :get
+                :uri (operacao (str "consulta/" nome))
+                :timeout 5000
+                :response-format (ajax/json-response-format {:keywords? true})
+                :on-success [:sucesso-consulta-produto]
+                :on-failure [:falha-consulta-produto]}} ))
+
+(rf/reg-event-fx 
+ :cadastra
+ (fn [{:keys [db]} [_ p]] 
+  {:db (assoc db :resposta-cadastro (str "Cadastrando " p "..."))
+   :http-xhrio {:method :post
+                :uri (operacao "cadastra")
+                :params p
+                :timeout 5000
+                :format (ajax/json-request-format)
+                :response-format (ajax/json-response-format {:keywords? true})
+                :on-success [:sucesso-cadastro-produto]
+                :on-failure [:falha-cadastro-produto]}}))
+
+(rf/reg-event-db
+  :falha-salva-mercado
+  (fn [db [_ result]]
+    (assoc db :resposta-mercado (str "Erro: " (:status-text result)))))
+
+(rf/reg-event-db
+  :sucesso-salva-mercado
+  (fn [db [_ result]]
+    (assoc db :resposta-mercado ""
+           :mercado (filter #(not (nil? (:nome %))) (ordena-mercado result)))))
+
+(rf/reg-event-fx 
+ :salva-mercado
+ (fn [{:keys [db]} [_ mercado]] 
+  {:db (assoc db :resposta-mercado "Salvando lista de mercado...")
+   :http-xhrio {:method :post
+                :uri (operacao "salva-mercado")
+                :params mercado
+                :timeout 5000
+                :format (ajax/json-request-format)
+                :response-format (ajax/json-response-format {:keywords? true})
+                :on-success [:sucesso-salva-mercado]
+                :on-failure [:falha-salva-mercado]}}))
+
+(rf/reg-event-db
+  :initialize
+  (fn [_ _]
     {:view-id "/"})) 
 
 (rf/reg-event-db                
@@ -68,7 +185,6 @@
                       i)) 
                   mercado)))))
 
-(rf/reg-event-db :update-mercado (fn [db [_ novo-mercado]] (assoc db :mercado (filter #(not (nil? (:nome %))) novo-mercado))))
 (rf/reg-event-db :resposta-mercado (fn [db [_ nova-resposta]] (assoc db :resposta-mercado nova-resposta)))
 (rf/reg-event-db :resposta-cadastro (fn [db [_ nova-resposta]] (assoc db :resposta-cadastro nova-resposta)))
 (rf/reg-event-db :cache-nome (fn [db [_ nova-cache]] (assoc db :cache-nome (normaliza nova-cache))))
@@ -81,11 +197,6 @@
 (rf/reg-event-db :altera-view (fn [db [_ novo]] 
                                 (secretary/dispatch! novo)
                                 (assoc db :view-id novo)))
-
-(rf/reg-event-db :salva-mercado (fn [db [_ m]] (salva-mercado m) db))
-(rf/reg-event-db :consulta-mercado (fn [db [_ _]] (consulta-mercado) db))
-(rf/reg-event-db :consulta (fn [db [_ nome]] (consulta nome) (assoc db :nome-consultado nome)))
-(rf/reg-event-db :cadastra (fn [db [_ p]] (cadastra p) db))
 
 ;; SUBS
 (rf/reg-sub :mercado (fn [db _] (:mercado db)))
@@ -103,69 +214,6 @@
 (defn json->clj [json] (js->clj (.parse js/JSON json) :keywordize-keys true))
 (defn gen-key []
   (gensym "key-"))
-
-;; -------------------------
-;; Estado
-(defonce servidor "https://infinite-crag-89428.herokuapp.com/")
-#_(defonce servidor "http://localhost:3000/")
-
-;; -------------------------
-;; Funcoes
-(defn formata [prefixo p sufixo]
-  (str prefixo p sufixo))
-(defn formata-aspas [p]
-  (formata "'" p "'"))
-(defn formata-data [p]
-  p)
-(defn operacao [op] 
-  (str servidor op))
-(defn nao-tem-preco [preco]
-  (> preco 999998))
-(defn formata-preco [preco]
-  (if (nao-tem-preco preco) 
-    "-"
-    (gstring/format "R$ %.2f" preco)))
-
-(defn ordena-mercado [mercado]
-  (sort-by (juxt :estoque :nome) mercado))
-
-(defn salva-mercado [mercado]
-  (rf/dispatch [:resposta-mercado "Salvando lista de mercado..."])
-  (go
-    (let [response (<! (try (http/post (operacao "salva-mercado") {:json-params mercado :with-credentials? false})
-                            (catch :default e
-                              (rf/dispatch [:resposta-mercado (str e)]))))]
-      (rf/dispatch [:update-mercado (ordena-mercado (json->clj (:body response)))])
-      (rf/dispatch [:resposta-mercado ""]))))
-
-(defn consulta-mercado []
-  (rf/dispatch [:resposta-mercado "Consultando lista de mercado..."])
-  (go
-    (let [response (<! (try (http/get (operacao "consulta-mercado") {:with-credentials? false})
-                            (catch :default e
-                              (rf/dispatch [:resposta-mercado (str e)]))))]
-      (rf/dispatch [:update-mercado (ordena-mercado (json->clj (:body response)))])
-      (rf/dispatch [:resposta-mercado ""]))))
-
-(defn consulta [nome]
-  (rf/dispatch [:resposta-cadastro (str "Consultando " nome "...")])
-  (go
-    (let [response (<! (try (http/get (operacao (str "consulta/" nome)) {:with-credentials? false})
-                            (catch :default e
-                              (rf/dispatch [:resposta-mercado (str e)]))))]
-      (rf/dispatch [:produtos (json->clj (:body response))])
-      (rf/dispatch [:resposta-cadastro ""]))))
-
-(defn cadastra [{:keys [nome preco local]}] 
-  (rf/dispatch [:resposta-cadastro (str "Cadastrando " nome "...")])
-  (go 
-    (let [p {:nome nome :preco preco :local local} 
-          response (<! (try (http/post (operacao "cadastra") {:json-params p :with-credentials? false})
-                            (catch :default e
-                              (rf/dispatch [:resposta-mercado (str e)]))))]
-      (rf/dispatch [:resposta-cadastro (str "Cadastrado " nome " com sucesso")])
-      (rf/dispatch [:consulta nome])
-      (rf/dispatch [:consulta-mercado]))))
 
 ;; -------------------------
 ;; Componentes
@@ -237,6 +285,7 @@
        ]]
      [gap :size "1em"]
      [button :label "Consulta" :class "btn-secondary" :on-click #(rf/dispatch [:consulta @(rf/subscribe [:cache-nome])])]
+     [button :label "Consulta Mercado" :class "btn-secondary" :on-click #(rf/dispatch [:consulta-mercado])]
      [gap :size "2em"]
      [:div [titulo "Produtos" :level2]]
      [:div
@@ -346,4 +395,3 @@
   (accountant/dispatch-current!)
   (mount-root))
 
-(rf/dispatch [:consulta-mercado])
