@@ -64,44 +64,49 @@
 
 ;; EVENTS
 (rf/reg-event-db
-  :falha-consulta-mercado
-  (fn [db [_ result]]
-    (assoc db :resposta-mercado (str "Erro: " (:status-text result)))))
+ :falha-consulta-mercado
+ (fn [db [_ result]]
+   (assoc db 
+     :feedback (assoc (:feedback db) :resposta-mercado (str "Erro: " (:status-text result))))))
 
 (rf/reg-event-db
   :sucesso-consulta-mercado
   (fn [db [_ result]]
     (assoc db
-      :resposta-mercado ""
+      :feedback (assoc (:feedback db) :resposta-mercado "")
       :mercado (filter #(not (nil? (:nome %))) result))))
 
 (rf/reg-event-db
   :falha-consulta-produto
   (fn [db [_ result]]
-    (assoc db :resposta-cadastro (str "Erro: " (:status-text result)))))
+    (assoc db 
+      :feedback (assoc (:feedback db) :resposta-cadastro (str "Erro: " (:status-text result))))))
 
 (rf/reg-event-db
   :sucesso-consulta-produto
   (fn [db [_ result]]
     (assoc db
       :nome-consultado (:nome (first result))
-      :resposta-cadastro ""
+      :feedback (assoc (:feedback db) :resposta-cadastro "")
       :produtos result)))
 
 (rf/reg-event-db
   :falha-cadastro-produto
   (fn [db [_ result]]
-    (assoc db :resposta-cadastro (str "Erro: " (:status-text result)))))
+    (assoc db 
+      :feedback (assoc (:feedback db) :resposta-cadastro (str "Erro: " (:status-text result))))))
 
 (rf/reg-event-db
   :sucesso-cadastro-produto
   (fn [db [_ result]]
-    (assoc db :resposta-cadastro (str "Cadastrado com sucesso " result))))
+    (assoc db 
+      :feedback (assoc (:feedback db) :resposta-cadastro (str "Cadastrado com sucesso " result))
+)))
 
 (rf/reg-event-fx 
  :consulta-mercado 
  (fn [{:keys [db]} _] 
-  {:db (assoc db :resposta-mercado "Consultando lista de mercado...")
+   {:db (assoc db :feedback (assoc (:feedback db) :resposta-mercado "Consultando lista de mercado..."))
    :http-xhrio {:method :get
                 :uri (operacao "consulta-mercado")
                 :timeout 5000
@@ -112,7 +117,7 @@
 (rf/reg-event-fx 
  :consulta
  (fn [{:keys [db]} [_ nome]] 
-  {:db (assoc db :resposta-cadastro (str "Consultando " nome "..."))
+   {:db (assoc db :feedback (assoc (:feedback db) :resposta-cadastro (str "Consultando " nome "...")))
    :http-xhrio {:method :get
                 :uri (operacao (str "consulta/" nome))
                 :timeout 5000
@@ -123,7 +128,7 @@
 (rf/reg-event-fx 
  :cadastra
  (fn [{:keys [db]} [_ p]] 
-  {:db (assoc db :resposta-cadastro (str "Cadastrando " p "..."))
+   {:db (assoc db :feedback (assoc (:feedback db) :resposta-cadastro (str "Cadastrando " p "...")))
    :http-xhrio {:method :post
                 :uri (operacao "cadastra")
                 :params p
@@ -136,18 +141,18 @@
 (rf/reg-event-db
   :falha-salva-mercado
   (fn [db [_ result]]
-    (assoc db :resposta-mercado (str "Erro: " (:status-text result)))))
+    (assoc db :feedback (assoc (:feedback db) :resposta-mercado (str "Erro: " (:status-text result))))))
 
 (rf/reg-event-db
   :sucesso-salva-mercado
   (fn [db [_ result]]
-    (assoc db :resposta-mercado ""
+    (assoc db :feedback (assoc (:feedback db) :resposta-mercado "")
            :mercado (filter #(not (nil? (:nome %))) (ordena-mercado result)))))
 
 (rf/reg-event-fx 
  :salva-mercado
  (fn [{:keys [db]} [_ mercado]] 
-  {:db (assoc db :resposta-mercado "Salvando lista de mercado...")
+   {:db (assoc db :feedback (assoc (:feedback db) :resposta-mercado "Salvando lista de mercado..."))
    :http-xhrio {:method :post
                 :uri (operacao "salva-mercado")
                 :params mercado
@@ -160,7 +165,7 @@
 (rf/reg-event-db
   :initialize
   (fn [_ _]
-    {:view-id "/"
+    {:view-id "/" :feedback  {}
      :debug {:servidor servidor}})) 
 
 (rf/reg-event-db                
@@ -187,8 +192,6 @@
                       i)) 
                   mercado)))))
 
-(rf/reg-event-db :resposta-mercado (fn [db [_ nova-resposta]] (assoc db :resposta-mercado nova-resposta)))
-(rf/reg-event-db :resposta-cadastro (fn [db [_ nova-resposta]] (assoc db :resposta-cadastro nova-resposta)))
 (rf/reg-event-db :cache-nome (fn [db [_ nova-cache]] (assoc db :cache-nome (normaliza nova-cache))))
 (rf/reg-event-db :cache-local (fn [db [_ nova-cache]] (assoc db :cache-local nova-cache)))
 (rf/reg-event-db :cache-preco (fn [db [_ nova-cache]] (assoc db :cache-preco
@@ -202,8 +205,6 @@
 
 ;; SUBS
 (rf/reg-sub :mercado (fn [db _] (:mercado db)))
-(rf/reg-sub :resposta-mercado (fn [db _] (:resposta-mercado db)))
-(rf/reg-sub :resposta-cadastro (fn [db _] (:resposta-cadastro db)))
 (rf/reg-sub :cache-nome (fn [db _] (:cache-nome db)))
 (rf/reg-sub :cache-preco (fn [db _] (:cache-preco db)))
 (rf/reg-sub :cache-local (fn [db _] (:cache-local db)))
@@ -211,6 +212,7 @@
 (rf/reg-sub :view-id (fn [db _] (:view-id db)))
 (rf/reg-sub :nome-consultado (fn [db _] (:nome-consultado db)))
 (rf/reg-sub :debug (fn [db _] (:debug db)))
+(rf/reg-sub :feedback (fn [db _] (:feedback db)))
 
 ;; VIEW
 (defn gen-key []
@@ -221,12 +223,12 @@
 (defn box-centro [componente]
   [box :align :center :justify :around :child componente])
 
-(defn feedback [resposta]
-  (if (not (str/blank? resposta)) 
-    [h-box :children [
-                      [:div [throbber]]
-                      (box-centro [:div [:label resposta]])]]
-    [:div]))
+(defn feedback []
+  (let [feedback (rf/subscribe [:feedback])]
+    (when (not (empty? @feedback))
+      [:div
+       (for [f (keys @feedback)]
+         [:div (f @feedback)])])))
 
 (defn input-com-regex [entrada regex]
   (conj entrada :validation-regex regex))
@@ -273,17 +275,17 @@
      [gap :size "2em"]
      [h-box :children
       [[box-centro
-        [:div [button :class "btn-primary"
-               :label "Cadastra" 
-               :on-click #(rf/dispatch [:cadastra {:nome @(rf/subscribe [:cache-nome])
-                                                   :local @(rf/subscribe [:cache-local])
-                                                   :preco @(rf/subscribe [:cache-preco])}])]]]
-       [feedback @(rf/subscribe [:resposta-cadastro])]
-       [feedback @(rf/subscribe [:resposta-mercado])]
-       ]]
-     [gap :size "1em"]
-     [button :label "Consulta" :class "btn-secondary" :on-click #(rf/dispatch [:consulta @(rf/subscribe [:cache-nome])])]
-     [button :label "Consulta Mercado" :class "btn-secondary" :on-click #(rf/dispatch [:consulta-mercado])]
+        [:div
+         [button :class "btn-primary"
+                 :label "Cadastra" 
+                 :on-click #(rf/dispatch [:cadastra {:nome @(rf/subscribe [:cache-nome])
+                                                     :local @(rf/subscribe [:cache-local])
+                                                     :preco @(rf/subscribe [:cache-preco])}])]
+
+         [button :label "Consulta" :class "btn-secondary" :on-click #(rf/dispatch [:consulta @(rf/subscribe [:cache-nome])])]
+         [button :label "Consulta Mercado" :class "btn-secondary" :on-click #(rf/dispatch [:consulta-mercado])]
+         ]]]]
+     [feedback]
      [gap :size "2em"]
      [:div [titulo "Produtos" :level2]]
      [:div
@@ -294,6 +296,7 @@
      [:div
       (for [p (distinct (map :local @(rf/subscribe [:produtos])))] ^{:key (gen-key)}
            [button :class "btn-secondary" :label (if (empty? p) "(vazio)!?" p) :on-click #(rf/dispatch [:cache-local p])])]
+     [gap :size "2em"]
      [:div [titulo (str "Historico " @(rf/subscribe [:nome-consultado])) :level2]]
      [:div [tabela]]]]
    ]
@@ -326,7 +329,7 @@
    ])
 
 (defn entrada-estoque [p]
-  (box-centro
+  [box-centro
    [:div
     [button :class "btn-xs"
      :label "-"
@@ -334,7 +337,7 @@
     [label :style {:padding "2px"} :label (:estoque p)]
     [button :class "btn-xs"
      :label "+"
-     :on-click #(rf/dispatch [:update-estoque (assoc p :estoque (inc (js/parseInt (:estoque p))))]) ]]))
+     :on-click #(rf/dispatch [:update-estoque (assoc p :estoque (inc (js/parseInt (:estoque p))))]) ]]])
 
 (defn label-mercado [texto]
   [:td {:style (conj (estilo-centro))}
@@ -362,7 +365,8 @@
   [v-box :children [[header] 
                     [titulo "Lista de Compras" :level1]
                     [h-box :children [[button :class "btn-primary" :label "Salva" :on-click #(rf/dispatch [:salva-mercado @(rf/subscribe [:mercado])])]
-                                      (feedback @(rf/subscribe [:resposta-mercado]))]]
+                                      ]]
+                    [feedback]
                     [gap :size "2em"]
                     [tabela-compras]]]) 
 
