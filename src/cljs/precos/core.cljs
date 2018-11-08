@@ -28,6 +28,14 @@
 
 ;; -------------------------
 ;; Funcoes
+(defn mercado->mapa [mercado]
+  (reduce #(conj %1 %2) {} 
+          (map (fn [item] {(keyword (:_id item)) item}) 
+               mercado)))
+
+(defn mercado->vetor [mercado]
+  (map #(nth % 1) (vec mercado)))
+
 (defn operacao [op] 
   (str servidor op))
 
@@ -76,7 +84,7 @@
   :sucesso-consulta-mercado
   (fn [db [_ result]]
     (assoc (registra-feedback db :resposta-mercado "")
-      :mercado (filter #(not (nil? (:nome %))) result))))
+      :mercado (mercado->mapa result))))
 
 (rf/reg-event-db
   :falha-consulta-produto
@@ -147,26 +155,27 @@
  (fn [db [_ result]]
    (assoc
        (registra-feedback db :resposta-mercado "")
-     :mercado (filter #(not (nil? (:nome %))) (ordena-mercado result)))))
+     :mercado (mercado->mapa (filter #(not (nil? (:nome %))) 
+                                      (ordena-mercado result))))))
 
 (rf/reg-event-fx 
  :salva-mercado
  (fn [{:keys [db]} [_ mercado]] 
    {:db (registra-feedback db :resposta-mercado "Salvando lista de mercado...")
-   :http-xhrio {:method :post
-                :uri (operacao "salva-mercado")
-                :params mercado
-                :timeout 5000
-                :format (ajax/json-request-format)
-                :response-format (ajax/json-response-format {:keywords? true})
-                :on-success [:sucesso-salva-mercado]
-                :on-failure [:falha-salva-mercado]}}))
+    :http-xhrio {:method :post
+                 :uri (operacao "salva-mercado")
+                 :params (mercado->vetor mercado)
+                 :timeout 5000
+                 :format (ajax/json-request-format)
+                 :response-format (ajax/json-response-format {:keywords? true})
+                 :on-success [:sucesso-salva-mercado]
+                 :on-failure [:falha-salva-mercado]}}))
 
 (rf/reg-fx
-  :alterar-view
-  (fn [{:keys [nova-view db]}]
-    (secretary/dispatch! nova-view)
-    (rf/dispatch [:nova-view nova-view])))
+ :alterar-view
+ (fn [{:keys [nova-view db]}]
+   (secretary/dispatch! nova-view)
+   (rf/dispatch [:nova-view nova-view])))
 
 (rf/reg-event-fx 
  :altera-view 
@@ -175,33 +184,26 @@
     :alterar-view {:nova-view novo}}))
 
 (rf/reg-event-db
-  :initialize
-  (fn [_ _]
-    {:view-id "/" :feedback  {}
-     :debug {:servidor servidor}})) 
+ :initialize
+ (fn [_ _]
+   {:view-id "/" :feedback  {}
+    :debug {:servidor servidor}})) 
 
 (rf/reg-event-db                
-  :toggle-comprar
-  (fn [db [_ {:keys [nome comprar estoque]}]] 
-    (let [mercado (:mercado db)
-          item (first (filter #(= nome (:nome %)) mercado))]
-      (assoc db :mercado 
-             (map (fn [i] 
-                    (if (= item i) 
-                      (assoc item :comprar (not (:comprar item))) 
-                      i)) 
-                  mercado)))))
+ :toggle-comprar
+ (fn [db [_ chave]] 
+   (let [mercado (:mercado db)
+         item (chave mercado)]
+     (assoc-in db [:mercado chave :comprar]
+               (not (:comprar item))))))
+
 (rf/reg-event-db                
-  :update-estoque
-  (fn [db [_ {:keys [nome comprar estoque]} f]] 
-    (let [mercado (:mercado db)
-          item (first (filter #(= nome (:nome %)) mercado))]
-      (assoc db :mercado 
-             (map (fn [i] 
-                    (if (= item i) 
-                      (assoc item :estoque (f (js/parseInt estoque))) 
-                      i)) 
-                  mercado)))))
+ :update-estoque
+ (fn [db [_ chave f]] 
+   (let [mercado (:mercado db)
+         item (chave mercado)]
+     (assoc-in db [:mercado chave :estoque]
+               (f (js/parseInt (:estoque item)))))))
 
 (rf/reg-event-db :nova-view (fn [db [_ novo]] (assoc db :view-id novo)))
 (rf/reg-event-db :cache-nome (fn [db [_ nova-cache]] (assoc db :cache-nome (normaliza nova-cache))))
@@ -287,30 +289,33 @@
       [[box-centro
         [:div
          [button :class "btn-primary"
-                 :label "Cadastra" 
-                 :on-click #(rf/dispatch [:cadastra {:nome @(rf/subscribe [:cache-nome])
-                                                     :local @(rf/subscribe [:cache-local])
-                                                     :preco @(rf/subscribe [:cache-preco])}])]
+          :label "Cadastra" 
+          :on-click #(rf/dispatch [:cadastra {:nome @(rf/subscribe [:cache-nome])
+                                              :local @(rf/subscribe [:cache-local])
+                                              :preco @(rf/subscribe [:cache-preco])}])]
 
          [button :label "Consulta" :class "btn-secondary" :on-click #(rf/dispatch [:consulta @(rf/subscribe [:cache-nome])])]
          [button :label "Consulta Mercado" :class "btn-secondary" :on-click #(rf/dispatch [:consulta-mercado])]
          ]]]]
      [feedback]
      [gap :size "2em"]
-     [:div [titulo "Produtos" :level2]]
-     [:div
-      (for [item @(rf/subscribe [:mercado])] ^{:key (gen-key)}
-           [button :style (estilo-compra item) :label (:nome item) :on-click #(rf/dispatch [:cache-nome (:nome item)])])]
+     [:div [titulo (str "Historico " @(rf/subscribe [:nome-consultado])) :level2]]
+     [:div [tabela]]
      [gap :size "2em"]
      [:div [titulo (str "Locais " @(rf/subscribe [:nome-consultado])) :level2]]
      [:div
       (for [p (distinct (map :local @(rf/subscribe [:produtos])))] ^{:key (gen-key)}
            [button :class "btn-secondary" :label (if (empty? p) "(vazio)!?" p) :on-click #(rf/dispatch [:cache-local p])])]
      [gap :size "2em"]
-     [:div [titulo (str "Historico " @(rf/subscribe [:nome-consultado])) :level2]]
-     [:div [tabela]]]]
+     [:div [titulo "Produtos" :level2]]
+     [:div
+      (let [mercado (rf/subscribe [:mercado])
+            items (map #(nth % 1) @mercado)]
+        (for [item items] ^{:key (gen-key)}
+             [button :style (estilo-compra item) :label (:nome item) :on-click #(rf/dispatch [:cache-nome (:nome item)])]))]
+]]
    ]
-)
+  )
 
 (defn header []
   [horizontal-tabs 
@@ -338,26 +343,26 @@
    [:td {:style (estilo-centro)} "Local"] 
    ])
 
-(defn entrada-estoque [p]
+(defn entrada-estoque [chave p]
   [box-centro
    [:div
     [button :class "btn-xs"
      :label "-"
-     :on-click #(rf/dispatch [:update-estoque p dec ])]
+     :on-click #(rf/dispatch [:update-estoque chave dec ])]
     [label :style {:padding "2px"} :label (:estoque p)]
     [button :class "btn-xs"
      :label "+"
-     :on-click #(rf/dispatch [:update-estoque p inc])]]])
+     :on-click #(rf/dispatch [:update-estoque chave inc])]]])
 
 (defn label-mercado [texto]
   [:td {:style (conj (estilo-centro))}
    [:font {:size 2}] texto])
 
-(defn elemento-compras [p] ^{:key (gen-key)}
+(defn elemento-compras [[chave p]] ^{:key (gen-key)}
   [:tr 
-   [:td [entrada-estoque p]]
+   [:td [entrada-estoque chave p]]
    [:td {:style (conj (estilo-centro) (estilo-compra p)) 
-         :on-click #(rf/dispatch [:toggle-comprar p])}
+         :on-click #(rf/dispatch [:toggle-comprar chave])}
     [:font {:size 2}] (:nome p)] 
    [label-mercado (formata-preco (:preco p))]
    [label-mercado (:local p)]
@@ -405,12 +410,12 @@
 
 (defn init! []
   (accountant/configure-navigation!
-    {:nav-handler
-     (fn [path]
-       (secretary/dispatch! path))
-     :path-exists?
-     (fn [path]
-       (secretary/locate-route path))})
+   {:nav-handler
+    (fn [path]
+      (secretary/dispatch! path))
+    :path-exists?
+    (fn [path]
+      (secretary/locate-route path))})
   (accountant/dispatch-current!)
   (mount-root))
 
