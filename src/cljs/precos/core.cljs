@@ -214,9 +214,8 @@
 
 
 ;; SUBS
-(def subss [:mercado :cache-nome :cache-preco :cache-local :protudos :view-id :nome-consultado :feedback :debug])
-(for [sub subss]
-  (doall (rf/reg-sub sub (fn [db _] (sub db)))))
+(def subss [:mercado :cache-nome :cache-preco :cache-local :produtos :view-id :nome-consultado :feedback :debug])
+(doall (map #(rf/reg-sub % (fn [db _] (% db))) subss))
 
 ;; VIEW
 (defn gen-key []
