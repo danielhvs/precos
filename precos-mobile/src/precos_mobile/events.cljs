@@ -9,8 +9,9 @@
    [clojure.string :as str]
    [precos-mobile.db :as db :refer [app-db]]))
 
+
 ;; -- Interceptors ------------------------------------------------------------
-;;
+;; 
 ;; See https://github.com/Day8/re-frame/blob/master/docs/Interceptors.md
 ;;
 (defn check-and-throw
@@ -91,6 +92,77 @@
    (assoc db :greeting value)))
 
 (reg-event-db
+ :falha-consulta-mercado
+ (fn [db [_ result]]
+   (registra-feedback db :resposta-mercado (str "Erro: " (:status-text result)))))
+
+(reg-event-db
+ :sucesso-consulta-mercado
+ (fn [db [_ result]]
+   (assoc (registra-feedback db :resposta-mercado "Sucesso, geraldo!")
+     :mercado (filter #(not (nil? (:nome %))) result))))
+
+(reg-event-db
+ :falha-consulta-produto
+ (fn [db [_ result]]
+   (registra-feedback db :resposta-cadastro (str "Erro: " (:status-text result)))))
+
+(reg-event-db
+ :sucesso-consulta-produto
+ (fn [db [_ result]]
+   (assoc
+       (registra-feedback db :resposta-cadastro "")
+     :nome-consultado (:nome (first result))
+     :produtos result)))
+
+(reg-event-db
+ :falha-cadastro-produto
+ (fn [db [_ result]]
+   (registra-feedback db :resposta-cadastro (str "Erro: " (:status-text result)))))
+
+(reg-event-db
+ :sucesso-cadastro-produto
+ (fn [db [_ result]]
+   (registra-feedback db :resposta-cadastro (str "Cadastrado com sucesso " result)
+                      )))
+
+(reg-event-fx 
+ :consulta-mercado 
+ (fn [{:keys [db]} _] 
+   {:db (registra-feedback db :resposta-mercado "Consultando lista de mercado...")
+    :http-xhrio {:method :get
+                 :uri (operacao "consulta-mercado")
+                 :timeout 5000
+                 :response-format "?"
+                 :on-success [:sucesso-consulta-mercado]
+                 :on-failure [:falha-consulta-mercado]}} ))
+
+(reg-event-fx 
+ :consulta
+ (fn [{:keys [db]} [_ nome]] 
+   {:db (registra-feedback db :resposta-cadastro (str "Consultando " nome "..."))
+    :http-xhrio2 {:method :get
+                 :uri (operacao (str "consulta/" nome))
+                 :timeout 5000
+                 :response-format "?"
+                 :on-success [:sucesso-consulta-produto]
+                 :on-failure [:falha-consulta-produto]}} ))
+
+(reg-event-fx 
+ :cadastra
+ (fn [{:keys [db]} [_ p]] 
+   {:db (registra-feedback db :resposta-cadastro (str "Cadastrando " p "..."))
+    :http-xhrio {:method :post
+                 :uri (operacao "cadastra")
+                 :params p
+                 :timeout 5000
+                 :format "?"
+                 :response-format "?"
+                 :on-success [:sucesso-cadastro-produto]
+                 :on-failure [:falha-cadastro-produto]}}))
+
+
+(reg-event-db
  :falha-salva-mercado
  (fn [db [_ result]]
    (registra-feedback db :resposta-mercado (str "Erro: " (:status-text result)))))
@@ -116,9 +188,14 @@
                  :on-failure [:falha-salva-mercado]}}))
 
 (reg-fx
+ :http-xhrio2
+ (fn [{:keys [on-sucess on-failure]}]
+   (dispatch [:falha-consulta-mercado {:status-text "Um erro geraldo"}])))
+
+(reg-fx
  :http-xhrio
  (fn [{:keys [on-sucess on-failure]}]
-   {}))
+   (dispatch [:sucesso-consulta-mercado [{:nome "arroz" :preco 1.24 :local "bistek"}]])))
 
 (reg-fx
  :alterar-view
