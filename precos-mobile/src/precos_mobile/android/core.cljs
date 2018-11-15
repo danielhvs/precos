@@ -17,6 +17,9 @@
 (defn alert [title]
       (.alert (.-Alert ReactNative) title))
 
+(defn gen-key []
+  (gensym "key-"))
+
 (def dados [
             {:nome "arroz" :preco 1.24 :local "bistek"}
             {:nome "feijao" :preco 5.23 :local "outro"}
@@ -30,11 +33,11 @@
 
 (defn feedback []
   (let [feedback (subscribe [:feedback])]
-    (doall
-     (when (not (empty? @feedback))
-       [view
-        (for [f (keys @feedback)]
-          [text (f @feedback)])]))))
+    (when (not (empty? @feedback))
+      [view
+       (doall
+        (for [f (keys @feedback)] ^{:key (gen-key)}
+          [text (f @feedback)]))])))
 
 (defn app-root []
   (let [greeting (subscribe [:get-greeting])]
