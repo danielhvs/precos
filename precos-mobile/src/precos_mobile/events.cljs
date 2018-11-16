@@ -2,6 +2,7 @@
   (:require
    [re-frame.core :refer [reg-event-db reg-event-fx reg-fx after dispatch]]
    [clojure.spec.alpha :as s]
+   [cljs-http.client :as http]
    [goog.string :as gstring]
    #_[ajax.core :as ajax]
    #_[day8.re-frame.http-fx] 
@@ -28,6 +29,16 @@
 ;; Funcoes
 (def servidor "https://infinite-crag-89428.herokuapp.com/")
 #_(def servidor "http://localhost:3000/")
+
+(defn consulta-mercado []
+  (go
+    (let [response (<! (try (http/get (str servidor "consulta-mercado") {:with-credentials? false})
+                            (catch :default e
+                              (reset! a-debug e))))]
+      (dispatch [:sucesso-consulta-mercado (:body response)])
+      #_(reset! mercado (json->clj (:body response)))
+)))
+
 
 (defn operacao [op] 
   (str servidor op))
