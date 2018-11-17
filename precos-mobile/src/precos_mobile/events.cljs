@@ -1,11 +1,11 @@
 (ns precos-mobile.events
+  (:require-macros [cljs.core.async.macros :refer [go]])
   (:require
    [re-frame.core :refer [reg-event-db reg-event-fx reg-fx after dispatch]]
    [clojure.spec.alpha :as s]
    [cljs-http.client :as http]
    [goog.string :as gstring]
-   #_[ajax.core :as ajax]
-   #_[day8.re-frame.http-fx] 
+   [cljs.core.async :refer [<!]]
    [clojure.string :as str]
    [precos-mobile.db :as db :refer [app-db]]))
 
@@ -30,16 +30,6 @@
 ;; Funcoes
 (def servidor "https://infinite-crag-89428.herokuapp.com/")
 #_(def servidor "http://localhost:3000/")
-
-(defn consulta-mercado []
-  (go
-    (let [response (<! (try (http/get (str servidor "consulta-mercado") {:with-credentials? false})
-                            (catch :default e
-                              (reset! a-debug e))))]
-      (dispatch [:sucesso-consulta-mercado (:body response)])
-      #_(reset! mercado (json->clj (:body response)))
-)))
-
 
 (defn operacao [op] 
   (str servidor op))
@@ -99,7 +89,7 @@
 (reg-event-db
  :sucesso-consulta-mercado
  (fn [db [_ result]]
-   (assoc (registra-feedback db :resposta-mercado "Sucesso, geraldo!")
+   (assoc (registra-feedback db :resposta-mercado (str result))
      :mercado (filter #(not (nil? (:nome %))) result))))
 
 (reg-event-db
@@ -195,7 +185,11 @@
 (reg-fx
  :http-xhrio
  (fn [{:keys [on-sucess on-failure]}]
-   (dispatch [:sucesso-consulta-mercado [{:nome "arroz" :preco 1.24 :local "bistek"}]])))
+   (go
+    (let [response (<! (http/get (str servidor "consulta-mercado") {:with-credentials? false}))]
+      (dispatch [:sucesso-consulta-mercado (:body response)])))
+   (dispatch [:sucesso-consulta-mercado [{:nome "arroz" :preco 1.24 :local "bistek"}]])
+))
 
 (reg-fx
  :alterar-view
@@ -207,12 +201,6 @@
  (fn [{:keys [db]} [_ novo]] 
    {:db db
     :alterar-view {:nova-view novo}}))
-
-#_(reg-event-db
- :initialize
- (fn [_ _]
-   {:view-id "/" :feedback  {}
-    :debug {:servidor servidor}})) 
 
 (reg-event-db                
  :toggle-comprar
@@ -245,5 +233,10 @@
                                                                nova-cache
                                                                (gstring/format "%.2f" (/ (js/parseInt nova-cache) 100))))))
 (reg-event-db :produtos (fn [db [_ novo]] (assoc db :produtos novo)))
+
+(defn consulta-mercado []
+  (go
+    (let [response (<! (http/get (str servidor "consulta-mercado") {:with-credentials? false}))]
+      (dispatch [:sucesso-consulta-mercado (:body response)]))))
 
 
