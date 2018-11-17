@@ -6,6 +6,8 @@
 
 (def ReactNative (js/require "react-native"))
 
+(def text-input (r/adapt-react-class (.-TextInput ReactNative)))
+(def scroll-view (r/adapt-react-class (.-ScrollView ReactNative)))
 (def app-registry (.-AppRegistry ReactNative))
 (def text (r/adapt-react-class (.-Text ReactNative)))
 (def view (r/adapt-react-class (.-View ReactNative)))
@@ -42,14 +44,20 @@
 (defn app-root []
   (let [greeting (subscribe [:get-greeting])]
     (fn []
-      [view {:style {:flex-direction "column" :margin 40 :align-items "center"}}
-       [botao-consulta-mercado]
-       [feedback]
-       [touchable-highlight {:style {:background-color "#999" :padding 10 :border-radius 5}
-                             :on-press #(dispatch [:consulta "whuuut?"])}
-        [text {:style {:color "white" :text-align "center" :font-weight "bold"}} "Consulta"]]
-       
-       ])))
+      [scroll-view
+       [view {:style {:flex-direction "column" :margin 40 :align-items "center"}}
+        [feedback]
+        [botao-consulta-mercado]
+        (let [mercado (subscribe [:mercado])]
+          (doall 
+             (for [item @mercado] ^{:key (gen-key)}
+               [view {:style {:flex-direction "row" :margin 10 :align-items "center"}}
+                [text (str (:nome item))]
+                [text (str (:preco item))]
+                [text (str (:local item))]
+])))
+        [text {:style {:color "white" :text-align "center" :font-weight "bold"}} "Consulta"]
+        ]])))
 
 (defn init []
       (dispatch-sync [:initialize-db])
@@ -60,3 +68,4 @@
                :style  {:width 80 :height 80 :margin-bottom 30}}]
 
 #_[text {:style {:font-size 30 :font-weight "100" :margin-bottom 20 :text-align "center"}} @greeting]
+

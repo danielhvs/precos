@@ -10,6 +10,9 @@
    [precos-mobile.db :as db :refer [app-db]]))
 
 
+(defn json->clj [json] 
+  (js->clj (.parse js/JSON json) :keywordize-keys true))
+
 ;; -- Interceptors ------------------------------------------------------------
 ;; 
 ;; See https://github.com/Day8/re-frame/blob/master/docs/Interceptors.md
@@ -89,8 +92,8 @@
 (reg-event-db
  :sucesso-consulta-mercado
  (fn [db [_ result]]
-   (assoc (registra-feedback db :resposta-mercado (str result))
-     :mercado (filter #(not (nil? (:nome %))) result))))
+   (assoc (registra-feedback db :resposta-mercado "Sucesso") 
+          :mercado (json->clj result))))
 
 (reg-event-db
  :falha-consulta-produto
@@ -188,7 +191,6 @@
    (go
     (let [response (<! (http/get (str servidor "consulta-mercado") {:with-credentials? false}))]
       (dispatch [:sucesso-consulta-mercado (:body response)])))
-   (dispatch [:sucesso-consulta-mercado [{:nome "arroz" :preco 1.24 :local "bistek"}]])
 ))
 
 (reg-fx
@@ -233,10 +235,3 @@
                                                                nova-cache
                                                                (gstring/format "%.2f" (/ (js/parseInt nova-cache) 100))))))
 (reg-event-db :produtos (fn [db [_ novo]] (assoc db :produtos novo)))
-
-(defn consulta-mercado []
-  (go
-    (let [response (<! (http/get (str servidor "consulta-mercado") {:with-credentials? false}))]
-      (dispatch [:sucesso-consulta-mercado (:body response)]))))
-
-
