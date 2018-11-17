@@ -58,8 +58,6 @@
   (if (nao-tem-preco preco) 
     "-"
     (gstring/format "R$ %.2f" preco)))
-(defn ordena-mercado [mercado]
-  (sort-by (juxt :estoque :nome) mercado))
 
 
 ;; EVENTS
@@ -76,7 +74,7 @@
  :sucesso-consulta-mercado
  (fn [db [_ result]]
    (assoc (registra-feedback db :resposta-mercado "")
-     :mercado (filter #(not (nil? (:nome %))) result))))
+          :mercado result)))
 
 (rf/reg-event-db
  :falha-consulta-produto
@@ -146,8 +144,8 @@
  :sucesso-salva-mercado
  (fn [db [_ result]]
    (assoc
-       (registra-feedback db :resposta-mercado "")
-     :mercado (filter #(not (nil? (:nome %))) (ordena-mercado result)))))
+    (registra-feedback db :resposta-mercado "")
+    :mercado result)))
 
 (rf/reg-event-fx 
  :salva-mercado
@@ -265,8 +263,8 @@
 
 ;; -------------------------
 ;; Views
-(defn botao-consulta-mercado []
-  [button :label "Consulta Mercado" :class "btn-primary" :on-click #(rf/dispatch [:consulta-mercado])])
+(defn botao-consulta-mercado [texto]
+  [button :label texto :class "btn-primary" :on-click #(rf/dispatch [:consulta-mercado])])
 
 (defn titulo [t l]
   [title :underline? true :level l :label t])
@@ -290,7 +288,7 @@
 
          [button :label "Consulta" :class "btn-secondary" :on-click #(rf/dispatch [:consulta @(rf/subscribe [:cache-nome])])]
          
-         [botao-consulta-mercado]
+         [botao-consulta-mercado "Atualiza Mercado"]
          ]]]]
      [feedback]
      [gap :size "2em"]
@@ -313,7 +311,7 @@
   [horizontal-tabs 
    :model @(rf/subscribe [:view-id])
    :tabs [{:id "/" :label "Precos"} 
-          {:id "/lista-compras" :label "Compras"} 
+          {:id "/estoque" :label "Estoque"} 
           {:id "/cadastro" :label "Cadastro"}]
    :on-change #(rf/dispatch [:altera-view %])])
 
@@ -329,12 +327,10 @@
 (defn estilo-centro []
   {:text-align "center" :vertical-align "middle"})
 
-(defn colunas-tabela-compras []
+(defn colunas-tabela-estoque []
   [:tr 
    [:td {:style (estilo-centro)} "Estoque"]
    [:td {:style (estilo-centro)} "Produto"] 
-   [:td {:style (estilo-centro)} "Preco"] 
-   [:td {:style (estilo-centro)} "Local"] 
    ])
 
 (defn entrada-estoque [p]
@@ -352,39 +348,40 @@
   [:td {:style (conj (estilo-centro))}
    [:font {:size 2}] texto])
 
-(defn elemento-compras [p] ^{:key (gen-key)}
+
+(defn elemento-estoque [p] ^{:key (gen-key)}
   [:tr 
    [:td [entrada-estoque p]]
-   [:td {:style (conj (estilo-centro) (estilo-compra p)) 
+   [:td {:style (estilo-centro)}
+    [:font {:size 2}] (:nome p)]
+   #_[:td {:style (conj (estilo-centro) (estilo-compra p)) 
          :on-click #(rf/dispatch [:toggle-comprar p])}
     [:font {:size 2}] (:nome p)] 
-   [label-mercado (formata-preco (:preco p))]
-   [label-mercado (:local p)]
    ])
 
-(defn tabela-compras []
+(defn tabela-estoque []
   [:div
    [:table.table
     [:tbody
-     [colunas-tabela-compras]
-     (for [p @(rf/subscribe [:mercado])] ^{:key (gen-key)}
-          [elemento-compras p])]]])
+     [colunas-tabela-estoque]
+     (for [p (sort-by :nome @(rf/subscribe [:mercado]))] ^{:key (gen-key)}
+          [elemento-estoque p])]]])
 
-(defn lista-compras []
+(defn estoque []
   [v-box :children [[header] 
-                    [titulo "Lista de Compras" :level1]
+                    [titulo "Estoque" :level1]
                     [h-box :children [
                                       [button :class "btn-primary" :label "Salva" :on-click #(rf/dispatch [:salva-mercado @(rf/subscribe [:mercado])])]
-                                      [botao-consulta-mercado]
+                                      [botao-consulta-mercado "Consulta Estoque"]
                                       ]]
                     [feedback]
                     [gap :size "2em"]
-                    [tabela-compras]]]) 
+                    [tabela-estoque]]]) 
 
 (defn precos []
   [v-box
    :children [[header]
-              [botao-consulta-mercado]
+              [botao-consulta-mercado "Consulta Melhores Precos"]
               [feedback]
               (let [mercado (rf/subscribe [:mercado])]
                 [:table.table
@@ -408,8 +405,8 @@
 (secretary/defroute "/" []
   (reset! page #'precos))
 
-(secretary/defroute "/lista-compras" []
-  (reset! page #'lista-compras))
+(secretary/defroute "/estoque" []
+  (reset! page #'estoque))
 
 ;; -------------------------
 ;; Initialize app
