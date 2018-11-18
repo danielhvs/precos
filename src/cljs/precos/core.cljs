@@ -241,6 +241,14 @@
    :model (str @(rf/subscribe [value]))
    :on-change #(rf/dispatch [funcao (f %)])])
 
+#_(defn input-element
+  "An input element which updates its value on change"
+  [value funcao placeholder f]
+  [:input {:placeholder placeholder
+           :class "entrada"
+           :value (str @(rf/subscribe [value]))
+           :on-change #(rf/dispatch [funcao (f (-> % .-target .-value))])}])
+
 (defn colunas-tabela []
   [:tr [:td "Produto"] [:td "Preco"] [:td "Data"] [:td "Local"]])
 
@@ -270,42 +278,37 @@
   [title :underline? true :level l :label t])
 
 (defn view-cadastro []
-  [:div
-   [v-box :children 
-    [[:div [titulo "Cadastro" :level1]]
-     [:div [input-element :cache-nome :cache-nome "Produto" identity] ]
-     [:div [input-com-regex (input-element :cache-preco :cache-preco "Preco" identity) #"^[0-9]*(\.[0-9]{0,2})?$"]]
-     [:div [input-element :cache-local :cache-local "Local" identity]]
-     [gap :size "2em"]
-     [h-box :children
-      [[box-centro
-        [:div
-         [button :class "btn-primary"
-                 :label "Cadastra" 
-                 :on-click #(rf/dispatch [:cadastra {:nome @(rf/subscribe [:cache-nome])
-                                                     :local @(rf/subscribe [:cache-local])
-                                                     :preco @(rf/subscribe [:cache-preco])}])]
+  [:div.espacados-vertical
+   [titulo "Cadastro" :level1]
+   [feedback]
+   [input-element :cache-nome :cache-nome "Produto" identity] 
+   [input-com-regex (input-element :cache-preco :cache-preco "Preco" identity) #"^[0-9]*(\.[0-9]{0,2})?$"]
+   [input-element :cache-local :cache-local "Local" identity]
+   [gap :size "2em"]
+   [:div.espacados-horizontal
+    [button :class "btn-primary"
+     :label "Cadastra" 
+     :on-click #(rf/dispatch [:cadastra {:nome @(rf/subscribe [:cache-nome])
+                                         :local @(rf/subscribe [:cache-local])
+                                         :preco @(rf/subscribe [:cache-preco])}])]
 
-         [button :label "Consulta" :class "btn-secondary" :on-click #(rf/dispatch [:consulta @(rf/subscribe [:cache-nome])])]
-         
-         [botao-consulta-mercado "Atualiza Mercado"]
-         ]]]]
-     [feedback]
-     [gap :size "2em"]
-     [:div [titulo "Produtos" :level2]]
-     [:div
-      (for [item @(rf/subscribe [:mercado])] ^{:key (gen-key)}
-           [button :style (estilo-compra item) :label (:nome item) :on-click #(rf/dispatch [:cache-nome (:nome item)])])]
-     [gap :size "2em"]
-     [:div [titulo (str "Locais " @(rf/subscribe [:nome-consultado])) :level2]]
-     [:div
-      (for [p (distinct (map :local @(rf/subscribe [:produtos])))] ^{:key (gen-key)}
-           [button :class "btn-secondary" :label (if (empty? p) "(vazio)!?" p) :on-click #(rf/dispatch [:cache-local p])])]
-     [gap :size "2em"]
-     [:div [titulo (str "Historico " @(rf/subscribe [:nome-consultado])) :level2]]
-     [:div [tabela]]]]
-   ]
-)
+    [button :label "Consulta Produto" :class "btn-secondary" :on-click #(rf/dispatch [:consulta @(rf/subscribe [:cache-nome])])]
+    
+    [botao-consulta-mercado "Atualiza Mercado"]]
+   [gap :size "2em"]
+   [:div [titulo "Produtos" :level2]]
+   [:div
+    (for [item @(rf/subscribe [:mercado])] ^{:key (gen-key)}
+      [button :style (estilo-compra item) :label (:nome item) :on-click #(rf/dispatch [:cache-nome (:nome item)])])]
+   [gap :size "2em"]
+   [:div [titulo (str "Locais " @(rf/subscribe [:nome-consultado])) :level2]]
+   [:div
+    (for [p (distinct (map :local @(rf/subscribe [:produtos])))] ^{:key (gen-key)}
+      [button :class "btn-secondary" :label (if (empty? p) "(vazio)!?" p) :on-click #(rf/dispatch [:cache-local p])])]
+   [gap :size "2em"]
+   [:div [titulo (str "Historico " @(rf/subscribe [:nome-consultado])) :level2]]
+   [:div [tabela]]]
+  )
 
 (defn header []
   [horizontal-tabs 
@@ -319,10 +322,10 @@
   [:div.debug (str "DEBUG: " @(rf/subscribe [:debug]))])
 
 (defn home-page []
-  [v-box
-   :children [[header]
-              [box :child [view-cadastro]]
-              [footer]]])
+  [:div.espacados-vertical  
+   [header]
+   [view-cadastro]
+   [footer]])
 
 (defn estilo-centro []
   {:text-align "center" :vertical-align "middle"})
@@ -354,9 +357,7 @@
    [:td [entrada-estoque p]]
    [:td {:style (estilo-centro)}
     [:font {:size 2}] (:nome p)]
-   #_[:td {:style (conj (estilo-centro) (estilo-compra p)) 
-         :on-click #(rf/dispatch [:toggle-comprar p])}
-    [:font {:size 2}] (:nome p)] 
+    
    ])
 
 (defn tabela-estoque []
@@ -370,19 +371,20 @@
 (defn estoque []
   [v-box :children [[header] 
                     [titulo "Estoque" :level1]
-                    [h-box :children [
-                                      [button :class "btn-primary" :label "Salva" :on-click #(rf/dispatch [:salva-mercado @(rf/subscribe [:mercado])])]
-                                      [botao-consulta-mercado "Consulta Estoque"]
-                                      ]]
                     [feedback]
+                    [:div.espacados-horizontal
+                     [botao-consulta-mercado "Consulta Estoque"]
+                     [button :class "btn-primary" :label "Salva" :on-click #(rf/dispatch [:salva-mercado @(rf/subscribe [:mercado])])]]
                     [gap :size "2em"]
                     [tabela-estoque]]]) 
 
 (defn precos []
   [v-box
    :children [[header]
-              [botao-consulta-mercado "Consulta Melhores Precos"]
+              [titulo "Precos" :level1]
               [feedback]
+              [botao-consulta-mercado "Consulta Melhores Precos"]
+              [gap :size "2em"]
               (let [mercado (rf/subscribe [:mercado])]
                 [:table.table
                  [:tbody
@@ -425,4 +427,9 @@
        (secretary/locate-route path))})
   (accountant/dispatch-current!)
   (mount-root))
+
+#_[:td {:style (conj (estilo-centro) (estilo-compra p)) 
+         :on-click #(rf/dispatch [:toggle-comprar p])}
+    [:font {:size 2}] (:nome p)]
+
 

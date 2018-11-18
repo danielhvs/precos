@@ -1,4 +1,17 @@
 div.debug {
-    background-color: darkgray;
-    color: white;
+    background-color: black;
+    color: whitesmoke;
+}
+
+div.espacados-horizontal {
+    display: flex;
+    justify-content: space-around;
+    flex-wrap: wrap;
+}
+
+div.espacados-vertical {
+    display: flex;
+    justify-content: space-around;
+    flex-wrap: wrap;
+    flex-direction: column;
 }
