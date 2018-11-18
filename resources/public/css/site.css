@@ -15,3 +15,10 @@ div.espacados-vertical {
     flex-wrap: wrap;
     flex-direction: column;
 }
+
+div.centralizado {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    height: 100vh;
+}
