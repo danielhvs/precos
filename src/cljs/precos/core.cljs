@@ -295,20 +295,23 @@
     [button :label "Consulta Produto" :class "btn-secondary" :on-click #(rf/dispatch [:consulta @(rf/subscribe [:cache-nome])])]
     
     [botao-consulta-mercado "Atualiza Mercado"]]
-   [gap :size "2em"]
-   [:div [titulo "Produtos" :level2]]
-   [:div
-    (for [item @(rf/subscribe [:mercado])] ^{:key (gen-key)}
-      [button :style (estilo-compra item) :label (:nome item) :on-click #(rf/dispatch [:cache-nome (:nome item)])])]
-   [gap :size "2em"]
-   [:div [titulo (str "Locais " @(rf/subscribe [:nome-consultado])) :level2]]
-   [:div
-    (for [p (distinct (map :local @(rf/subscribe [:produtos])))] ^{:key (gen-key)}
-      [button :class "btn-secondary" :label (if (empty? p) "(vazio)!?" p) :on-click #(rf/dispatch [:cache-local p])])]
-   [gap :size "2em"]
-   [:div [titulo (str "Historico " @(rf/subscribe [:nome-consultado])) :level2]]
-   [:div [tabela]]]
-  )
+   (let [nome-consultado (rf/subscribe [:nome-consultado])]
+     (when (seq @nome-consultado)
+       [:div.espacados-vertical
+        [titulo (str "Historico " @(rf/subscribe [:nome-consultado])) :level2]
+        [tabela]
+        [titulo (str "Locais " @(rf/subscribe [:nome-consultado])) :level2]       
+        (for [p (distinct (map :local @(rf/subscribe [:produtos])))] ^{:key (gen-key)}
+          [button :class "btn-secondary" :label (if (empty? p) "(vazio)!?" p) :on-click #(rf/dispatch [:cache-local p])])
+
+        ]))
+   (let [mercado (rf/subscribe [:mercado])]
+     (when (seq @mercado)
+       [:div
+        [titulo "Produtos" :level2]
+        (for [item @(rf/subscribe [:mercado])] ^{:key (gen-key)}
+          [button :style (estilo-compra item) :label (:nome item) :on-click #(rf/dispatch [:cache-nome (:nome item)])])]))
+   ])
 
 (defn header []
   [horizontal-tabs 
@@ -319,7 +322,8 @@
    :on-change #(rf/dispatch [:altera-view %])])
 
 (defn footer []
-  [:div.debug (str "DEBUG: " @(rf/subscribe [:debug]))])
+  [:div]
+  #_[:div.debug (str "DEBUG: " @(rf/subscribe [:debug]))])
 
 (defn home-page []
   [:div.espacados-vertical  
@@ -360,38 +364,44 @@
     
    ])
 
-(defn tabela-estoque []
+(defn tabela-estoque [mercado]
   [:div
    [:table.table
     [:tbody
      [colunas-tabela-estoque]
-     (for [p (sort-by :nome @(rf/subscribe [:mercado]))] ^{:key (gen-key)}
+     (for [p (sort-by :nome mercado)] ^{:key (gen-key)}
           [elemento-estoque p])]]])
 
 (defn estoque []
-  [v-box :children [[header] 
-                    [titulo "Estoque" :level1]
-                    [feedback]
-                    [:div.espacados-horizontal
-                     [botao-consulta-mercado "Consulta Estoque"]
-                     [button :class "btn-primary" :label "Salva" :on-click #(rf/dispatch [:salva-mercado @(rf/subscribe [:mercado])])]]
-                    [gap :size "2em"]
-                    [tabela-estoque]]]) 
+  [:div.espacados-vertical
+   [header] 
+   [titulo "Estoque" :level1]
+   [feedback]
+   [:div.espacados-horizontal
+    [botao-consulta-mercado "Consulta Estoque"]
+    [button :class "btn-primary" :label "Salva" :on-click #(rf/dispatch [:salva-mercado @(rf/subscribe [:mercado])])]]
+   [gap :size "2em"]
+   (let [mercado (rf/subscribe [:mercado])]
+     (when (seq @mercado)
+       [tabela-estoque @mercado]))]) 
 
 (defn precos []
-  [v-box
-   :children [[header]
-              [titulo "Precos" :level1]
-              [feedback]
-              [botao-consulta-mercado "Consulta Melhores Precos"]
-              [gap :size "2em"]
-              (let [mercado (rf/subscribe [:mercado])]
-                [:table.table
-                 [:tbody
-                  [:tr [:td "Produto"] [:td "Melhor Preco"] [:td "Local"]]
-                  (for [item (sort-by :nome @mercado)]
-                    [:tr [:td (:nome item)] [:td (formata-preco (:preco item))] [:td (:local item)]])]])
-              [footer]]])
+  [:div.espacados-vertical
+   [header]
+   [titulo "Precos" :level1]
+   [feedback]
+   [botao-consulta-mercado "Consulta Melhores Precos"]
+   [gap :size "2em"]
+   (let [mercado (rf/subscribe [:mercado])]
+     (when (seq @mercado)
+       [:table.table
+        [:tbody
+         [:tr [:td "Produto"] [:td "Melhor Preco"] [:td "Local"]]
+         (for [item (sort-by :nome @mercado)]
+           [:tr
+            [:td (:nome item)] 
+            [:td (formata-preco (:preco item))] [:td (:local item)]])]]))
+   [footer]])
 
 ;; -------------------------
 ;; Routes
