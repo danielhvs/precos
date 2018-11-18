@@ -13,6 +13,8 @@
             [re-com.misc :refer [throbber input-text]]
             [re-com.text :refer [label title]]
             [re-com.tabs :refer [horizontal-tabs]]
+            [re-com.modal-panel :refer [modal-panel]
+             ]
             [cljs-http.client :as http]
             [goog.string :as gstring]
             [cljs.core.async :refer [<!]]
@@ -66,7 +68,7 @@
     :feedback (assoc (:feedback db) chave valor)))
 
 (rf/reg-event-db
- :falha-consulta-mercado
+ :falha-http
  (fn [db [_ result]]
    (registra-feedback db :resposta-mercado (str "Erro: " (:status-text result)))))
 
@@ -77,9 +79,14 @@
           :mercado result)))
 
 (rf/reg-event-db
- :falha-consulta-produto
+ :sucesso-consulta-historico
  (fn [db [_ result]]
-   (registra-feedback db :resposta-cadastro (str "Erro: " (:status-text result)))))
+   (assoc db :historico result)))
+
+(rf/reg-event-db
+ :limpa-historico
+ (fn [db [_ result]]
+   (dissoc db :historico)))
 
 (rf/reg-event-db
  :sucesso-consulta-produto
@@ -88,11 +95,6 @@
        (registra-feedback db :resposta-cadastro "")
      :nome-consultado (:nome (first result))
      :produtos result)))
-
-(rf/reg-event-db
- :falha-cadastro-produto
- (fn [db [_ result]]
-   (registra-feedback db :resposta-cadastro (str "Erro: " (:status-text result)))))
 
 (rf/reg-event-db
  :sucesso-cadastro-produto
@@ -109,7 +111,7 @@
                  :timeout 5000
                  :response-format (ajax/json-response-format {:keywords? true})
                  :on-success [:sucesso-consulta-mercado]
-                 :on-failure [:falha-consulta-mercado]}} ))
+                 :on-failure [:falha-http]}} ))
 
 (rf/reg-event-fx 
  :consulta
@@ -120,7 +122,18 @@
                  :timeout 5000
                  :response-format (ajax/json-response-format {:keywords? true})
                  :on-success [:sucesso-consulta-produto]
-                 :on-failure [:falha-consulta-produto]}} ))
+                 :on-failure [:falha-http]}} ))
+
+(rf/reg-event-fx 
+ :consulta-historico
+ (fn [{:keys [db]} [_ nome]] 
+   {:db (registra-feedback db :resposta-historico (str "Consultando " nome "..."))
+    :http-xhrio {:method :get
+                 :uri (operacao (str "consulta/" nome))
+                 :timeout 5000
+                 :response-format (ajax/json-response-format {:keywords? true})
+                 :on-success [:sucesso-consulta-historico]
+                 :on-failure [:falha-http]}} ))
 
 (rf/reg-event-fx 
  :cadastra
@@ -133,12 +146,7 @@
                  :format (ajax/json-request-format)
                  :response-format (ajax/json-response-format {:keywords? true})
                  :on-success [:sucesso-cadastro-produto]
-                 :on-failure [:falha-cadastro-produto]}}))
-
-(rf/reg-event-db
- :falha-salva-mercado
- (fn [db [_ result]]
-   (registra-feedback db :resposta-mercado (str "Erro: " (:status-text result)))))
+                 :on-failure [:falha-http]}}))
 
 (rf/reg-event-db
  :sucesso-salva-mercado
@@ -158,7 +166,7 @@
                  :format (ajax/json-request-format)
                  :response-format (ajax/json-response-format {:keywords? true})
                  :on-success [:sucesso-salva-mercado]
-                 :on-failure [:falha-salva-mercado]}}))
+                 :on-failure [:falha-http]}}))
 
 (rf/reg-fx
  :alterar-view
@@ -212,7 +220,7 @@
 
 
 ;; SUBS
-(def subss [:mercado :cache-nome :cache-preco :cache-local :produtos :view-id :nome-consultado :feedback :debug])
+(def subss [:mercado :cache-nome :cache-preco :cache-local :produtos :view-id :nome-consultado :feedback :debug :historico])
 (doall (map #(rf/reg-sub % (fn [db _] (% db))) subss))
 
 ;; VIEW
@@ -259,15 +267,14 @@
    [:td (formata-data (:data v))] 
    [:td (formata-aspas (:local v))]])
 
-(defn tabela []
-  (let [visao (rf/subscribe [:produtos])]
-    [:div
-     (when (not (empty? @visao))
-       [:table {:class "table"}
-        [:tbody
-         (colunas-tabela)
-         (for [v @visao] ^{:key (gen-key)}
-              (elemento v))]])]))
+(defn tabela [visao]
+  [:div
+   (when (not (empty? visao))
+     [:table {:class "table"}
+      [:tbody
+       (colunas-tabela)
+       (for [v visao] ^{:key (gen-key)}
+         (elemento v))]])])
 
 ;; -------------------------
 ;; Views
@@ -297,14 +304,15 @@
     [botao-consulta-mercado "Atualiza Mercado"]]
    (let [nome-consultado (rf/subscribe [:nome-consultado])]
      (when (seq @nome-consultado)
-       [:div.espacados-vertical
-        [titulo (str "Historico " @(rf/subscribe [:nome-consultado])) :level2]
-        [tabela]
-        [titulo (str "Locais " @(rf/subscribe [:nome-consultado])) :level2]       
-        (for [p (distinct (map :local @(rf/subscribe [:produtos])))] ^{:key (gen-key)}
-          [button :class "btn-secondary" :label (if (empty? p) "(vazio)!?" p) :on-click #(rf/dispatch [:cache-local p])])
+       (let [produtos (rf/subscribe [:produtos])]
+         [:div.espacados-vertical
+          [titulo (str "Historico " @(rf/subscribe [:nome-consultado])) :level2]
+          [tabela @produtos]
+          [titulo (str "Locais " @(rf/subscribe [:nome-consultado])) :level2]       
+          (for [p (distinct (map :local @produtos))] ^{:key (gen-key)}
+            [button :class "btn-secondary" :label (if (empty? p) "(vazio)!?" p) :on-click #(rf/dispatch [:cache-local p])])
 
-        ]))
+          ])))
    (let [mercado (rf/subscribe [:mercado])]
      (when (seq @mercado)
        [:div
@@ -386,22 +394,32 @@
        [tabela-estoque @mercado]))]) 
 
 (defn precos []
-  [:div.espacados-vertical
-   [header]
-   [titulo "Precos" :level1]
-   [feedback]
-   [botao-consulta-mercado "Consulta Melhores Precos"]
-   [gap :size "2em"]
-   (let [mercado (rf/subscribe [:mercado])]
-     (when (seq @mercado)
-       [:table.table
-        [:tbody
-         [:tr [:td "Produto"] [:td "Melhor Preco"] [:td "Local"]]
-         (for [item (sort-by :nome @mercado)]
-           [:tr
-            [:td (:nome item)] 
-            [:td (formata-preco (:preco item))] [:td (:local item)]])]]))
-   [footer]])
+  (let [historico (rf/subscribe [:historico])]
+    (if (seq @historico)  
+      [modal-panel :child [tabela @historico]
+       :backdrop-on-click #(rf/dispatch [:limpa-historico])
+       :backdrop-opacity "0.5"]
+      [:div.espacados-vertical
+       [header]
+       [titulo "Precos" :level1]
+       [feedback]
+       [botao-consulta-mercado "Consulta Melhores Precos"]
+       [gap :size "2em"]
+       (let [mercado (rf/subscribe [:mercado])]
+         (when (seq @mercado)
+           [:table.table
+            [:tbody
+             [:tr [:td "Produto"] [:td "Melhor Preco"] [:td "Local"] [:td "Pesquisar"]]
+             (for [item (sort-by :nome @mercado)]
+               [:tr
+                [:td (:nome item)] 
+                [:td (formata-preco (:preco item))] 
+                [:td (:local item)]
+                [:td [button :label "+" :class "btn-primary" :on-click #(rf/dispatch [:consulta-historico (:nome item)])]]
+                ])]]))
+       [footer]
+       ]))
+)
 
 ;; -------------------------
 ;; Routes
