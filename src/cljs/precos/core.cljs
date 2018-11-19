@@ -28,6 +28,9 @@
 (def servidor "https://infinite-crag-89428.herokuapp.com/")
 #_(def servidor "http://localhost:3000/")
 
+(defonce ^const TIMEOUT_ESCRITA 20000)
+(defonce ^const TIMEOUT_LEITURA 30000)
+
 ;; -------------------------
 ;; Funcoes
 (defn operacao [op] 
@@ -48,10 +51,6 @@
     {:background-color "coral"}
     {:background-color "skyblue"}))
 
-(defn formata [prefixo p sufixo]
-  (str prefixo p sufixo))
-(defn formata-aspas [p]
-  (formata "'" p "'"))
 (defn formata-data [p]
   p)
 (defn nao-tem-preco [preco]
@@ -110,7 +109,7 @@
    {:db (registra-feedback db :resposta-mercado "Consultando lista de mercado...")
     :http-xhrio {:method :get
                  :uri (operacao "consulta-mercado")
-                 :timeout 5000
+                 :timeout TIMEOUT_LEITURA
                  :response-format (ajax/json-response-format {:keywords? true})
                  :on-success [:sucesso-consulta-mercado]
                  :on-failure [:falha-http]}} ))
@@ -121,7 +120,7 @@
    {:db (registra-feedback db :resposta-cadastro (str "Consultando " nome "..."))
     :http-xhrio {:method :get
                  :uri (operacao (str "consulta/" nome))
-                 :timeout 5000
+                 :timeout TIMEOUT_LEITURA
                  :response-format (ajax/json-response-format {:keywords? true})
                  :on-success [:sucesso-consulta-produto]
                  :on-failure [:falha-http]}} ))
@@ -132,7 +131,7 @@
    {:db (assoc db :resposta-historico (str "Consultando " nome "..."))
     :http-xhrio {:method :get
                  :uri (operacao (str "consulta/" nome))
-                 :timeout 5000
+                 :timeout TIMEOUT_LEITURA
                  :response-format (ajax/json-response-format {:keywords? true})
                  :on-success [:sucesso-consulta-historico]
                  :on-failure [:falha-http]}} ))
@@ -144,7 +143,7 @@
     :http-xhrio {:method :post
                  :uri (operacao "cadastra")
                  :params p
-                 :timeout 5000
+                 :timeout TIMEOUT_ESCRITA
                  :format (ajax/json-request-format)
                  :response-format (ajax/json-response-format {:keywords? true})
                  :on-success [:sucesso-cadastro-produto]
@@ -164,7 +163,7 @@
     :http-xhrio {:method :post
                  :uri (operacao "salva-mercado")
                  :params mercado
-                 :timeout 5000
+                 :timeout TIMEOUT_ESCRITA
                  :format (ajax/json-request-format)
                  :response-format (ajax/json-response-format {:keywords? true})
                  :on-success [:sucesso-salva-mercado]
@@ -214,6 +213,7 @@
 (rf/reg-event-db :nova-view (fn [db [_ novo]] (assoc db :view-id novo)))
 (rf/reg-event-db :cache-nome (fn [db [_ nova-cache]] (assoc db :cache-nome (normaliza nova-cache))))
 (rf/reg-event-db :cache-local (fn [db [_ nova-cache]] (assoc db :cache-local nova-cache)))
+(rf/reg-event-db :cache-info (fn [db [_ nova-cache]] (assoc db :cache-info nova-cache)))
 (rf/reg-event-db :cache-preco (fn [db [_ nova-cache]] (assoc db :cache-preco
                                                              (if (str/includes? nova-cache ".") 
                                                                nova-cache
@@ -222,7 +222,7 @@
 
 
 ;; SUBS
-(def subss [:mercado :cache-nome :cache-preco :cache-local :produtos :view-id :nome-consultado :feedback :debug :historico :resposta-historico])
+(def subss [:mercado :cache-nome :cache-preco :cache-local :produtos :view-id :nome-consultado :feedback :debug :historico :resposta-historico :cache-info])
 (doall (map #(rf/reg-sub % (fn [db _] (% db))) subss))
 
 ;; VIEW
@@ -260,14 +260,20 @@
            :on-change #(rf/dispatch [funcao (f (-> % .-target .-value))])}])
 
 (defn colunas-tabela []
-  [:tr [:td "Produto"] [:td "Preco"] [:td "Data"] [:td "Local"]])
+  [:tr 
+   [:td "Produto"] 
+   [:td "Preco"] 
+   [:td "Data"] 
+   [:td "Local"] 
+   [:td "Observacao"]])
 
 (defn elemento [v] ^{:key (gen-key)}
   [:tr 
-   [:td (formata-aspas (:nome v))] 
+   [:td (:nome v)] 
    [:td (formata-preco (:preco v))] 
    [:td (formata-data (:data v))] 
-   [:td (formata-aspas (:local v))]])
+   [:td (:local v)] 
+   [:td (:info v)]])
 
 (defn tabela [visao]
   [:div
@@ -293,12 +299,14 @@
    [input-element :cache-nome :cache-nome "Produto" identity] 
    [input-com-regex (input-element :cache-preco :cache-preco "Preco" identity) #"^[0-9]*(\.[0-9]{0,2})?$"]
    [input-element :cache-local :cache-local "Local" identity]
+   [input-element :cache-info :cache-info "Observacao" identity]
    [gap :size "2em"]
    [:div.espacados-horizontal
     [button :class "btn-primary"
      :label "Cadastra" 
      :on-click #(rf/dispatch [:cadastra {:nome @(rf/subscribe [:cache-nome])
                                          :local @(rf/subscribe [:cache-local])
+                                         :info @(rf/subscribe [:cache-info])
                                          :preco @(rf/subscribe [:cache-preco])}])]
 
     [button :label "Consulta Produto" :class "btn-secondary" :on-click #(rf/dispatch [:consulta @(rf/subscribe [:cache-nome])])]
