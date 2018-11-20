@@ -196,15 +196,10 @@
                  mercado)))))
 (rf/reg-event-db                
  :update-estoque
- (fn [db [_ {:keys [nome comprar estoque]} f]] 
-   (let [mercado (:mercado db)
-         item (first (filter #(= nome (:nome %)) mercado))]
-     (assoc db :mercado 
-            (map (fn [i] 
-                   (if (= item i) 
-                     (assoc item :estoque (f (js/parseInt estoque))) 
-                     i)) 
-                 mercado)))))
+ (fn [db [_ {:keys [nome comprar estoque i]} f]] 
+   (let [mercado (vec (sort-by :nome (:mercado db)))
+         item (nth mercado i)]
+     (assoc db :mercado (assoc mercado i (assoc item :estoque (f estoque)))))))
 
 (rf/reg-event-db :cache-nome (fn [db [_ nova-cache]] (assoc db :cache-nome (normaliza nova-cache))))
 (rf/reg-event-db :cache-local (fn [db [_ nova-cache]] (assoc db :cache-local nova-cache)))
@@ -366,7 +361,7 @@
    [:div
     [button :class "btn-xs"
      :label "-"
-     :on-click #(rf/dispatch [:update-estoque p dec ])]
+     :on-click #(rf/dispatch [:update-estoque p dec])]
     [label :style {:padding "2px"} :label (:estoque p)]
     [button :class "btn-xs"
      :label "+"
@@ -390,21 +385,22 @@
    [:table.table
     [:tbody
      [colunas-tabela-estoque]
-     (for [p (sort-by :nome mercado)] ^{:key (gen-key)}
+     (for [p (map-indexed (fn [i item] (assoc item :i i)) (sort-by :nome mercado))] ^{:key (gen-key)}
           [elemento-estoque p])]]])
 
 (defn view-estoque []
-  [:div.espacados-vertical
-   [header] 
-   [titulo "Estoque" :level1]
-   [feedback]
-   [:div.espacados-horizontal
-    [botao-consulta-mercado "Consulta Estoque"]
-    [button :class "btn-primary" :label "Salva" :on-click #(rf/dispatch [:salva-mercado @(rf/subscribe [:mercado])])]]
-   [gap :size "2em"]
-   (let [mercado (rf/subscribe [:mercado])]
+  (let [mercado (rf/subscribe [:mercado])]
+    [:div.espacados-vertical
+     [header] 
+     [titulo "Estoque" :level1]
+     [feedback]
+     [:div.espacados-horizontal
+      [botao-consulta-mercado "Consulta Estoque"]
+      (when (seq @mercado)
+        [button :class "btn-primary" :label "Salva" :on-click #(rf/dispatch [:salva-mercado @mercado])])]
+     [gap :size "2em"]
      (when (seq @mercado)
-       [tabela-estoque @mercado]))]) 
+       [tabela-estoque @mercado])]))
 
 (defn view-precos []
   (let [historico (rf/subscribe [:historico])
@@ -432,10 +428,8 @@
                   [:td (formata-preco (:preco item))] 
                   [:td (:local item)]
                   [:td [button :label "+" :class "btn-primary" :on-click #(rf/dispatch [:consulta-historico (:nome item)])]]
-                  ])]]))
-         [footer]
-         ])))
-)
+                  ])]])) 
+         [footer]]))))
 
 ;; -------------------------
 ;; Routes
