@@ -16,9 +16,44 @@ div.espacados-vertical {
     flex-direction: column;
 }
 
+.menu {
+    display: flex;
+    justify-content: flex-start;
+    flex-wrap: wrap;
+    flex-direction: row;
+}
+
 div.centralizado {
     display: flex;
     justify-content: center;
     align-items: center;
     height: 100vh;
+}
+
+
+/* Menu */
+ul {
+    list-style-type: none;
+    margin: 0;
+    padding: 0;
+    width: 10hv;
+    background-color: #f1f1f1;
+}
+
+li button {
+    display: block;
+    color: #000;
+    padding: 8px 16px;
+    text-decoration: none;
+    border: none;
+}
+
+li button.active {
+    background-color: #4CAF50;
+    color: white;
+}
+
+li button:hover:not(.active) {
+    background-color: #555;
+    color: white;
 }
