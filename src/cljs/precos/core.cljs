@@ -332,17 +332,11 @@
         ->class #(if (= @view-id %) "active" "")]
     [:div
      [:ul {:class "menu"}
-      (prn @view-id)
       [:li [:button {:on-click #(rf/dispatch [:altera-view view-precos]) :class (->class view-precos)} "Precos"]]
       [:li [:button {:on-click #(rf/dispatch [:altera-view view-estoque]) :class (->class view-estoque)} "Estoque" ]]
       [:li [:button {:on-click #(rf/dispatch [:altera-view view-cadastro]) :class (->class view-cadastro)} "Cadastro" ]]
       ]])
-  #_[horizontal-tabs 
-   :model @(rf/subscribe [:view-id])
-   :tabs [{:id "/" :label "Precos"} 
-          {:id "/estoque" :label "Estoque"} 
-          {:id "/cadastro" :label "Cadastro"}]
-   :on-change #(rf/dispatch [:altera-view %])])
+)
 
 (defn footer []
   [:div]
@@ -350,7 +344,6 @@
 
 (defn pagina-toda []
   (let [view (rf/subscribe [:view-id])]
-    (prn "TODO: " @view)
     [@view]))
 
 (defn view-cadastro []
