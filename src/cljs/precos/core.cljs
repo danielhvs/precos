@@ -196,10 +196,10 @@
                  mercado)))))
 (rf/reg-event-db                
  :update-estoque
- (fn [db [_ {:keys [nome comprar estoque i]} f]] 
+ (fn [db [_ {:keys [nome comprar estoque i]} x]] 
    (let [mercado (vec (sort-by :nome (:mercado db)))
          item (nth mercado i)]
-     (assoc db :mercado (assoc mercado i (assoc item :estoque (f estoque)))))))
+     (assoc db :mercado (assoc mercado i (assoc item :estoque (js/parseInt x)))))))
 
 (rf/reg-event-db :cache-nome (fn [db [_ nova-cache]] (assoc db :cache-nome (normaliza nova-cache))))
 (rf/reg-event-db :cache-local (fn [db [_ nova-cache]] (assoc db :cache-local nova-cache)))
@@ -350,22 +350,14 @@
 (defn estilo-centro []
   {:text-align "center" :vertical-align "middle"})
 
-(defn colunas-tabela-estoque []
-  [:tr 
-   [:td {:style (estilo-centro)} "Estoque"]
-   [:td {:style (estilo-centro)} "Produto"] 
-   ])
-
 (defn entrada-estoque [p]
   [box-centro
    [:div
-    [button :class "btn-xs"
-     :label "-"
-     :on-click #(rf/dispatch [:update-estoque p dec])]
-    [label :style {:padding "2px"} :label (:estoque p)]
-    [button :class "btn-xs"
-     :label "+"
-     :on-click #(rf/dispatch [:update-estoque p inc])]]])
+    [:select {:key "estoque" :on-change #(rf/dispatch [:update-estoque p (.. % -target -value)])}
+     (for [x (range 100)]
+       (if (= x (:estoque p))
+         [:option {:key x :selected "true"} x]
+         [:option {:key x} x]))]]])
 
 (defn label-mercado [texto]
   [:td {:style (conj (estilo-centro))}
@@ -376,15 +368,15 @@
   [:tr 
    [:td [entrada-estoque p]]
    [:td {:style (estilo-centro)}
-    [:font {:size 2}] (:nome p)]
-    
-   ])
+    [:font {:size 2}] (:nome p)]])
 
 (defn tabela-estoque [mercado]
   [:div
    [:table.table
     [:tbody
-     [colunas-tabela-estoque]
+     [:tr 
+      [:td {:style (estilo-centro)} "Estoque"]
+      [:td {:style (estilo-centro)} "Produto"]]
      (for [p (map-indexed (fn [i item] (assoc item :i i)) (sort-by :nome mercado))] ^{:key (gen-key)}
           [elemento-estoque p])]]])
 
