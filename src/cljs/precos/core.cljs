@@ -317,8 +317,9 @@
      (when (seq @mercado)
        [:div
         [titulo "Produtos" :level2]
-        (for [item @(rf/subscribe [:mercado])] ^{:key (gen-key)}
-          [button :style (estilo-compra item) :label (:nome item) :on-click #(rf/dispatch [:cache-nome (:nome item)])])]))
+        [:div.espacados-horizontal
+         (for [item @(rf/subscribe [:mercado])] ^{:key (gen-key)}
+           [button :style (estilo-compra item) :label (:nome item) :on-click #(rf/dispatch [:cache-nome (:nome item)])])]]))
    ])
 
 (defn header []
