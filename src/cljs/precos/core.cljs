@@ -25,6 +25,9 @@
 (declare consulta)
 (declare cadastra)
 (declare header)
+(declare view-cadastro)
+(declare view-precos)
+(declare view-estoque)
 (def servidor "https://infinite-crag-89428.herokuapp.com/")
 #_(def servidor "http://localhost:3000/")
 
@@ -169,22 +172,15 @@
                  :on-success [:sucesso-salva-mercado]
                  :on-failure [:falha-http]}}))
 
-(rf/reg-fx
- :alterar-view
- (fn [{:keys [nova-view db]}]
-   (secretary/dispatch! nova-view)
-   (rf/dispatch [:nova-view nova-view])))
-
-(rf/reg-event-fx 
+(rf/reg-event-db
  :altera-view 
- (fn [{:keys [db]} [_ novo]] 
-   {:db db
-    :alterar-view {:nova-view novo}}))
+ (fn [db [_ novo]] 
+   (assoc db :view-id novo)))
 
 (rf/reg-event-db
  :initialize
  (fn [_ _]
-   {:view-id "/" :feedback  {}
+   {:view-id view-precos :feedback  {}
     :debug {:servidor servidor}})) 
 
 (rf/reg-event-db                
@@ -210,7 +206,6 @@
                      i)) 
                  mercado)))))
 
-(rf/reg-event-db :nova-view (fn [db [_ novo]] (assoc db :view-id novo)))
 (rf/reg-event-db :cache-nome (fn [db [_ nova-cache]] (assoc db :cache-nome (normaliza nova-cache))))
 (rf/reg-event-db :cache-local (fn [db [_ nova-cache]] (assoc db :cache-local nova-cache)))
 (rf/reg-event-db :cache-info (fn [db [_ nova-cache]] (assoc db :cache-info nova-cache)))
@@ -292,7 +287,7 @@
 (defn titulo [t l]
   [title :underline? true :level l :label t])
 
-(defn view-cadastro []
+(defn form-cadastro []
   [:div.espacados-vertical
    [titulo "Cadastro" :level1]
    [feedback]
@@ -332,7 +327,17 @@
    ])
 
 (defn header []
-  [horizontal-tabs 
+  (let [view-id (rf/subscribe [:view-id])
+        active? #(= @view-id %)
+        ->class #(if (= @view-id %) "active" "")]
+    [:div
+     [:ul {:class "menu"}
+      (prn @view-id)
+      [:li [:button {:on-click #(rf/dispatch [:altera-view view-precos]) :class (->class view-precos)} "Precos"]]
+      [:li [:button {:on-click #(rf/dispatch [:altera-view view-estoque]) :class (->class view-estoque)} "Estoque" ]]
+      [:li [:button {:on-click #(rf/dispatch [:altera-view view-cadastro]) :class (->class view-cadastro)} "Cadastro" ]]
+      ]])
+  #_[horizontal-tabs 
    :model @(rf/subscribe [:view-id])
    :tabs [{:id "/" :label "Precos"} 
           {:id "/estoque" :label "Estoque"} 
@@ -343,10 +348,15 @@
   [:div]
   #_[:div.debug (str "DEBUG: " @(rf/subscribe [:debug]))])
 
-(defn home-page []
+(defn pagina-toda []
+  (let [view (rf/subscribe [:view-id])]
+    (prn "TODO: " @view)
+    [@view]))
+
+(defn view-cadastro []
   [:div.espacados-vertical  
    [header]
-   [view-cadastro]
+   [form-cadastro]
    [footer]])
 
 (defn estilo-centro []
@@ -390,7 +400,7 @@
      (for [p (sort-by :nome mercado)] ^{:key (gen-key)}
           [elemento-estoque p])]]])
 
-(defn estoque []
+(defn view-estoque []
   [:div.espacados-vertical
    [header] 
    [titulo "Estoque" :level1]
@@ -403,7 +413,7 @@
      (when (seq @mercado)
        [tabela-estoque @mercado]))]) 
 
-(defn precos []
+(defn view-precos []
   (let [historico (rf/subscribe [:historico])
         resposta-historico (rf/subscribe [:resposta-historico])]
     (if (seq @historico)  
@@ -437,19 +447,10 @@
 ;; -------------------------
 ;; Routes
 
-(defonce page (atom #'precos))
+(defonce page (atom #'pagina-toda))
 
 (defn current-page []
   [:div [@page]])
-
-(secretary/defroute "/cadastro" []
-  (reset! page #'home-page))
-
-(secretary/defroute "/" []
-  (reset! page #'precos))
-
-(secretary/defroute "/estoque" []
-  (reset! page #'estoque))
 
 ;; -------------------------
 ;; Initialize app
@@ -468,9 +469,3 @@
        (secretary/locate-route path))})
   (accountant/dispatch-current!)
   (mount-root))
-
-#_[:td {:style (conj (estilo-centro) (estilo-compra p)) 
-         :on-click #(rf/dispatch [:toggle-comprar p])}
-    [:font {:size 2}] (:nome p)]
-
-
