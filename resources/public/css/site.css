@@ -30,14 +30,22 @@ div.centralizado {
     height: 100vh;
 }
 
+.view {
+  padding: 16px;
+  margin-top: 30px;
+}
+
 
 /* Menu */
 ul {
+    position: fixed;
     list-style-type: none;
     margin: 0;
     padding: 0;
-    width: 10hv;
+    width: 100hv;
     background-color: #f1f1f1;
+    top: 0;
+    width: 100%;
 }
 
 li button {

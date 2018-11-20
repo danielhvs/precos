@@ -339,7 +339,8 @@
 
 (defn pagina-toda []
   (let [view (rf/subscribe [:view-id])]
-    [@view]))
+    [:div.view
+     [@view]]))
 
 (defn view-cadastro []
   [:div.espacados-vertical  
