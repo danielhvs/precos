@@ -28,8 +28,8 @@
 (declare view-cadastro)
 (declare view-precos)
 (declare view-estoque)
-(def servidor "https://infinite-crag-89428.herokuapp.com/")
-#_(def servidor "http://localhost:3000/")
+#_(def servidor "https://infinite-crag-89428.herokuapp.com/")
+(def servidor "http://localhost:3000/")
 
 (defonce ^const TIMEOUT_ESCRITA 20000)
 (defonce ^const TIMEOUT_LEITURA 30000)
@@ -75,102 +75,22 @@
    (registra-feedback db :resposta-mercado (str "Erro: " (:status-text result)))))
 
 (rf/reg-event-db
- :sucesso-consulta-mercado
- (fn [db [_ result]]
-   (assoc (registra-feedback db :resposta-mercado "")
-          :mercado result)))
-
-(rf/reg-event-db
- :sucesso-consulta-historico
- (fn [db [_ result]]
-   (-> db
-       (assoc :historico result)
-       (dissoc :resposta-historico))))
-
-(rf/reg-event-db
- :limpa-historico
- (fn [db [_ result]]
-   (dissoc db :historico)))
-
-(rf/reg-event-db
- :sucesso-consulta-produto
+ :sucesso-produtos
  (fn [db [_ result]]
    (assoc
-       (registra-feedback db :resposta-cadastro "")
-     :nome-consultado (:nome (first result))
+       (registra-feedback db :resposta-produtos "Sucesso")
      :produtos result)))
 
-(rf/reg-event-db
- :sucesso-cadastro-produto
- (fn [db [_ result]]
-   (registra-feedback db :resposta-cadastro (str "Cadastrado com sucesso " result)
-                      )))
-
 (rf/reg-event-fx 
- :consulta-mercado 
+ :produtos
  (fn [{:keys [db]} _] 
-   {:db (registra-feedback db :resposta-mercado "Consultando lista de mercado...")
+   {:db (registra-feedback db :resposta-mercado "Consultando produtos...")
     :http-xhrio {:method :get
-                 :uri (operacao "consulta-mercado")
+                 :uri (operacao "produtos")
                  :timeout TIMEOUT_LEITURA
                  :response-format (ajax/json-response-format {:keywords? true})
-                 :on-success [:sucesso-consulta-mercado]
+                 :on-success [:sucesso-produtos]
                  :on-failure [:falha-http]}} ))
-
-(rf/reg-event-fx 
- :consulta
- (fn [{:keys [db]} [_ nome]] 
-   {:db (registra-feedback db :resposta-cadastro (str "Consultando " nome "..."))
-    :http-xhrio {:method :get
-                 :uri (operacao (str "consulta/" nome))
-                 :timeout TIMEOUT_LEITURA
-                 :response-format (ajax/json-response-format {:keywords? true})
-                 :on-success [:sucesso-consulta-produto]
-                 :on-failure [:falha-http]}} ))
-
-(rf/reg-event-fx 
- :consulta-historico
- (fn [{:keys [db]} [_ nome]] 
-   {:db (assoc db :resposta-historico (str "Consultando " nome "..."))
-    :http-xhrio {:method :get
-                 :uri (operacao (str "consulta/" nome))
-                 :timeout TIMEOUT_LEITURA
-                 :response-format (ajax/json-response-format {:keywords? true})
-                 :on-success [:sucesso-consulta-historico]
-                 :on-failure [:falha-http]}} ))
-
-(rf/reg-event-fx 
- :cadastra
- (fn [{:keys [db]} [_ p]] 
-   {:db (registra-feedback db :resposta-cadastro (str "Cadastrando " p "..."))
-    :http-xhrio {:method :post
-                 :uri (operacao "cadastra")
-                 :params p
-                 :timeout TIMEOUT_ESCRITA
-                 :format (ajax/json-request-format)
-                 :response-format (ajax/json-response-format {:keywords? true})
-                 :on-success [:sucesso-cadastro-produto]
-                 :on-failure [:falha-http]}}))
-
-(rf/reg-event-db
- :sucesso-salva-mercado
- (fn [db [_ result]]
-   (assoc
-    (registra-feedback db :resposta-mercado "")
-    :mercado result)))
-
-(rf/reg-event-fx 
- :salva-mercado
- (fn [{:keys [db]} [_ mercado]] 
-   {:db (registra-feedback db :resposta-mercado "Salvando lista de mercado...")
-    :http-xhrio {:method :post
-                 :uri (operacao "salva-mercado")
-                 :params mercado
-                 :timeout TIMEOUT_ESCRITA
-                 :format (ajax/json-request-format)
-                 :response-format (ajax/json-response-format {:keywords? true})
-                 :on-success [:sucesso-salva-mercado]
-                 :on-failure [:falha-http]}}))
 
 (rf/reg-event-db
  :altera-view 
@@ -277,7 +197,7 @@
 ;; -------------------------
 ;; Views
 (defn botao-consulta-mercado [texto]
-  [button :label texto :class "btn-primary" :on-click #(rf/dispatch [:consulta-mercado])])
+  [button :label texto :class "btn-primary" :on-click #(rf/dispatch [:produtos])])
 
 (defn titulo [t l]
   [title :underline? true :level l :label t])
