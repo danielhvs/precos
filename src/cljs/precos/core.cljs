@@ -82,7 +82,7 @@
      :produtos result)))
 
 (rf/reg-event-fx 
- :produtos
+ :consulta-produtos
  (fn [{:keys [db]} _] 
    {:db (registra-feedback db :resposta-mercado "Consultando produtos...")
     :http-xhrio {:method :get
@@ -197,7 +197,7 @@
 ;; -------------------------
 ;; Views
 (defn botao-consulta-mercado [texto]
-  [button :label texto :class "btn-primary" :on-click #(rf/dispatch [:produtos])])
+  [button :label texto :class "btn-primary" :on-click #(rf/dispatch [:consulta-produtos])])
 
 (defn titulo [t l]
   [title :underline? true :level l :label t])
@@ -249,8 +249,8 @@
     [:div
      [:ul {:class "menu"}
       [:li [:button {:on-click #(rf/dispatch [:altera-view view-precos]) :class (->class view-precos)} "Precos"]]
-      [:li [:button {:on-click #(rf/dispatch [:altera-view view-estoque]) :class (->class view-estoque)} "Estoque" ]]
-      [:li [:button {:on-click #(rf/dispatch [:altera-view view-cadastro]) :class (->class view-cadastro)} "Cadastro" ]]
+      #_[:li [:button {:on-click #(rf/dispatch [:altera-view view-estoque]) :class (->class view-estoque)} "Estoque" ]]
+      #_[:li [:button {:on-click #(rf/dispatch [:altera-view view-cadastro]) :class (->class view-cadastro)} "Cadastro" ]]
       ]])
 )
 
@@ -316,7 +316,7 @@
      (when (seq @mercado)
        [tabela-estoque @mercado])]))
 
-(defn view-precos []
+(defn view-precos-old []
   (let [historico (rf/subscribe [:historico])
         resposta-historico (rf/subscribe [:resposta-historico])]
     (if (seq @historico)  
@@ -344,6 +344,23 @@
                   [:td [button :label "+" :class "btn-primary" :on-click #(rf/dispatch [:consulta-historico (:nome item)])]]
                   ])]])) 
          [footer]]))))
+
+(defn view-precos [] 
+  (let [produtos (rf/subscribe [:produtos])]
+    [:div.espacados-vertical
+     [header]
+     [feedback]
+     [botao-consulta-mercado "Consulta Melhores Precos"]
+     [gap :size "2em"]
+     [:table.table
+      [:tbody
+       (for [chave (sort (keys @produtos))]
+         [:tr
+          [:td chave] 
+          [:td (str ((keyword chave) @produtos))]
+          [:td [button :label "+" :class "btn-primary" :on-click #(rf/dispatch [:consulta-historico (:nome chave)])]]
+          ])]]
+     [footer]]))
 
 ;; -------------------------
 ;; Routes
