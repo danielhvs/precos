@@ -28,8 +28,8 @@
 (declare view-cadastro)
 (declare view-precos)
 (declare view-estoque)
-#_(def servidor "https://infinite-crag-89428.herokuapp.com/")
-(def servidor "http://localhost:3000/")
+#_(def servidor "https://infinite-crag-89428.herokuapp.com")
+(def servidor "http://localhost:3000")
 
 (defonce ^const TIMEOUT_ESCRITA 20000)
 (defonce ^const TIMEOUT_LEITURA 30000)
@@ -81,12 +81,31 @@
        (registra-feedback db :resposta-produtos "Sucesso")
      :produtos result)))
 
+(rf/reg-event-db
+ :sucesso-consulta-historico
+ (fn [db [_ result]]
+   (assoc
+       (registra-feedback db :resposta-produtos (str "Result: " (str (:historico result))))
+     :historico result)))
+
+(rf/reg-event-fx 
+ :consulta-historico
+ (fn [{:keys [db]} [_ chave]] 
+   {:db (assoc db :resposta-mercado (str "Consultando " chave "..."))
+    :http-xhrio {:method :get
+                 :uri (operacao (str "/produtos/" (name chave)))
+                 :timeout TIMEOUT_LEITURA
+                 :response-format (ajax/json-response-format {:keywords? true})
+                 :on-success [:sucesso-consulta-historico]
+                 :on-failure [:falha-http]}} ))
+
+
 (rf/reg-event-fx 
  :consulta-produtos
  (fn [{:keys [db]} _] 
    {:db (registra-feedback db :resposta-mercado "Consultando produtos...")
     :http-xhrio {:method :get
-                 :uri (operacao "produtos")
+                 :uri (operacao "/produtos")
                  :timeout TIMEOUT_LEITURA
                  :response-format (ajax/json-response-format {:keywords? true})
                  :on-success [:sucesso-produtos]
@@ -358,7 +377,7 @@
          [:tr
           [:td chave] 
           [:td (str ((keyword chave) @produtos))]
-          [:td [button :label "+" :class "btn-primary" :on-click #(rf/dispatch [:consulta-historico (:nome chave)])]]
+          [:td [button :label "+" :class "btn-primary" :on-click #(rf/dispatch [:consulta-historico chave])]]
           ])]]
      [footer]]))
 
