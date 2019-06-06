@@ -72,21 +72,39 @@
 (rf/reg-event-db
  :falha-http
  (fn [db [_ result]]
-   (registra-feedback db :resposta-mercado (str "Erro: " (:status-text result)))))
+   (registra-feedback db :resposta-produtos (str "Erro: " (:status-text result)))))
+
+(rf/reg-event-db
+ :sucesso-insere-produto
+ (fn [db [_ result]]
+   (registra-feedback db :resposta-produtos "Sucesso ao inserir produto")))
 
 (rf/reg-event-db
  :sucesso-produtos
  (fn [db [_ result]]
    (assoc
-       (registra-feedback db :resposta-produtos "Sucesso")
+       (registra-feedback db :resposta-produtos "Sucesso ao consultar produtos")
      :produtos result)))
 
 (rf/reg-event-db
  :sucesso-consulta-historico
  (fn [db [_ result]]
    (assoc
-       (registra-feedback db :resposta-produtos (str "Result: " (str (:historico result))))
+       (registra-feedback db :resposta-produtos (str "Resultado consulta historico: " (str (:historico result))))
      :historico result)))
+
+(rf/reg-event-fx 
+ :insere-produto
+ (fn [{:keys [db]} _] 
+   {:db (registra-feedback db :resposta-mercado "Insere....")
+    :http-xhrio {:method :post
+                 :uri (operacao "/produtos")
+                 :params {(keyword (:cache-nome db)) {:obs (:cache-info db) :historico []}} 
+                 :format (ajax/json-request-format)
+                 :timeout TIMEOUT_ESCRITA
+                 :response-format (ajax/text-response-format)
+                 :on-success [:sucesso-insere-produto]
+                 :on-failure [:falha-http]}}))
 
 (rf/reg-event-fx 
  :consulta-historico
@@ -109,7 +127,7 @@
                  :timeout TIMEOUT_LEITURA
                  :response-format (ajax/json-response-format {:keywords? true})
                  :on-success [:sucesso-produtos]
-                 :on-failure [:falha-http]}} ))
+                 :on-failure [:falha-http]}}))
 
 (rf/reg-event-db
  :altera-view 
@@ -373,6 +391,14 @@
      [gap :size "2em"]
      [:table.table
       [:tbody
+       [:tr 
+        [:td "Produto"] 
+        [:td "Observação"] 
+        [:td ""]]
+       [:tr 
+        [:td [input-element :cache-nome :cache-nome "Produto" identity]] 
+        [:td [input-element :cache-info :cache-info "Observacao" identity]] 
+        [:td [button :label "+" :class "btn-primary" :on-click #(rf/dispatch [:insere-produto])]]]
        (for [chave (sort (keys @produtos))]
          [:tr
           [:td chave] 
