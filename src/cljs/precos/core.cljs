@@ -99,7 +99,7 @@
    {:db (registra-feedback db :resposta-mercado "Insere....")
     :http-xhrio {:method :post
                  :uri (operacao "/produtos")
-                 :params {(keyword (:cache-nome db)) {:obs (:cache-info db) :historico []}} 
+                 :params {(keyword (:cache-nome db)) {:sumario {:obs (:cache-info db) :preco (:cache-preco db)}}} 
                  :format (ajax/json-request-format)
                  :timeout TIMEOUT_ESCRITA
                  :response-format (ajax/text-response-format)
@@ -394,15 +394,18 @@
        [:tr 
         [:td "Produto"] 
         [:td "Observação"] 
+        [:td "Preço"]
         [:td ""]]
        [:tr 
         [:td [input-element :cache-nome :cache-nome "Produto" identity]] 
         [:td [input-element :cache-info :cache-info "Observacao" identity]] 
+        [:td [input-element :cache-preco :cache-preco "Preço" identity]] 
         [:td [button :label "+" :class "btn-primary" :on-click #(rf/dispatch [:insere-produto])]]]
        (for [chave (sort (keys @produtos))]
          [:tr
           [:td chave] 
-          [:td (str ((keyword chave) @produtos))]
+          [:td (:obs (:sumario ((keyword chave) @produtos)))]
+          [:td (:preco (:sumario ((keyword chave) @produtos)))]
           [:td [button :label "+" :class "btn-primary" :on-click #(rf/dispatch [:consulta-historico chave])]]
           ])]]
      [footer]]))
