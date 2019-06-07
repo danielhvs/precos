@@ -28,6 +28,7 @@
 (declare view-cadastro)
 (declare view-precos)
 (declare view-estoque)
+(declare view-historico)
 #_(def servidor "https://infinite-crag-89428.herokuapp.com")
 (def servidor "http://localhost:3000")
 
@@ -89,9 +90,11 @@
 (rf/reg-event-db
  :sucesso-consulta-historico
  (fn [db [_ result]]
-   (assoc
-       (registra-feedback db :resposta-produtos (str "Resultado consulta historico: " (str (:historico result))))
-     :historico result)))
+   (do
+     (rf/dispatch [:altera-view view-historico])
+     (assoc
+         (registra-feedback db :resposta-produtos (str "Resultado consulta historico: " (str (:historico result))))
+       :historico result))))
 
 (rf/reg-event-fx 
  :insere-produto
@@ -381,6 +384,28 @@
                   [:td [button :label "+" :class "btn-primary" :on-click #(rf/dispatch [:consulta-historico (:nome item)])]]
                   ])]])) 
          [footer]]))))
+
+(defn view-historico [] 
+  (let [historico (rf/subscribe [:historico])]
+    [:div 
+     [button :label "<" :class "btn-primary" :on-click #(rf/dispatch [:altera-view view-precos])]
+     [:table.table
+      [:tbody
+       [:tr 
+        [:td "Observação"] 
+        [:td "Preço"]
+        [:td ""]]
+       [:tr 
+        [:td [input-element :cache-preco :cache-preco "Preço" identity]] 
+        [:td [input-element :cache-info :cache-info "Observacao" identity]] 
+        [:td [button :label "+" :class "btn-primary" :on-click #(rf/dispatch [:insere-historico])]]
+        ]
+       (for [h (:historico @historico)]
+         [:tr
+          [:td (str (:preco h))]
+          [:td (str (:obs h))]
+])]]]))
+
 
 (defn view-precos [] 
   (let [produtos (rf/subscribe [:produtos])]
