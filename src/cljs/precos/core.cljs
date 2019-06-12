@@ -392,18 +392,18 @@
      [:table.table
       [:tbody
        [:tr 
-        [:td "Observação"] 
         [:td "Preço"]
+        [:td "Local"] 
         [:td ""]]
        [:tr 
         [:td [input-element :cache-preco :cache-preco "Preço" identity]] 
-        [:td [input-element :cache-info :cache-info "Observacao" identity]] 
+        [:td [input-element :cache-local :cache-local "Local" identity]] 
         [:td [button :label "+" :class "btn-primary" :on-click #(rf/dispatch [:insere-historico])]]
         ]
        (for [h (:historico @historico)]
          [:tr
           [:td (str (:preco h))]
-          [:td (str (:obs h))]
+          [:td (str (:local h))]
 ])]]]))
 
 
@@ -418,19 +418,21 @@
       [:tbody
        [:tr 
         [:td "Produto"] 
-        [:td "Observação"] 
         [:td "Preço"]
-        [:td ""]]
+        [:td "Local"]]
+        [:td "Observação"] 
        [:tr 
         [:td [input-element :cache-nome :cache-nome "Produto" identity]] 
-        [:td [input-element :cache-info :cache-info "Observacao" identity]] 
         [:td [input-element :cache-preco :cache-preco "Preço" identity]] 
+        [:td [input-element :cache-local :cache-local "Local" identity]] 
+        [:td [input-element :cache-info :cache-info "Observacao" identity]] 
         [:td [button :label "+" :class "btn-primary" :on-click #(rf/dispatch [:insere-produto])]]]
        (for [chave (sort (keys @produtos))]
          [:tr
           [:td chave] 
-          [:td (:obs (:sumario ((keyword chave) @produtos)))]
           [:td (:preco (:sumario ((keyword chave) @produtos)))]
+          [:td (:local (:sumario ((keyword chave) @produtos)))]
+          [:td (:obs (:sumario ((keyword chave) @produtos)))]
           [:td [button :label "+" :class "btn-primary" :on-click #(rf/dispatch [:consulta-historico chave])]]
           ])]]
      [footer]]))
