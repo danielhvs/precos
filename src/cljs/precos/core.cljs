@@ -76,9 +76,18 @@
    (registra-feedback db :resposta-produtos (str "Erro: " (:status-text result)))))
 
 (rf/reg-event-db
- :sucesso-insere-produto
+ :sucesso-insere-historico
  (fn [db [_ result]]
-   (registra-feedback db :resposta-produtos "Sucesso ao inserir produto")))
+   (do
+     (rf/dispatch [:consulta-historico (:nome-atual db)])
+     (registra-feedback db :resposta-produtos "Sucesso ao inserir historico"))))
+
+(rf/reg-event-db
+ :sucesso-insere-sumario
+ (fn [db [_ result]]
+   (do
+     (rf/dispatch [:consulta-produtos])
+     (registra-feedback db :resposta-produtos "Sucesso ao inserir produto"))))
 
 (rf/reg-event-db
  :sucesso-produtos
@@ -89,25 +98,41 @@
 
 (rf/reg-event-db
  :sucesso-consulta-historico
- (fn [db [_ result]]
+ (fn [db [_ chave result]] 
    (do
      (rf/dispatch [:altera-view view-historico])
      (assoc
-         (registra-feedback db :resposta-produtos (str "Resultado consulta historico: " (str (:historico result))))
-       :historico result))))
+         (registra-feedback db :resposta-produtos (str "Resultado consulta historico: " chave result))
+       :historico result
+       :nome-atual chave))))
 
 (rf/reg-event-fx 
- :insere-produto
+ :insere-sumario
  (fn [{:keys [db]} _] 
-   {:db (registra-feedback db :resposta-mercado "Insere....")
-    :http-xhrio {:method :post
-                 :uri (operacao "/produtos")
-                 :params {(keyword (:cache-nome db)) {:sumario {:obs (:cache-info db) :preco (:cache-preco db)}}} 
-                 :format (ajax/json-request-format)
-                 :timeout TIMEOUT_ESCRITA
-                 :response-format (ajax/text-response-format)
-                 :on-success [:sucesso-insere-produto]
-                 :on-failure [:falha-http]}}))
+   (let [nome (:cache-nome db)]
+     {:db (registra-feedback db :resposta-mercado "Insere....")
+      :http-xhrio {:method :post
+                   :uri (operacao (str "/produtos/" nome "/sumario"))
+                   :params {:obs (:cache-info db) :preco (:cache-preco db) :local (:cache-local db)} 
+                   :format (ajax/json-request-format)
+                   :timeout TIMEOUT_ESCRITA
+                   :response-format (ajax/text-response-format)
+                   :on-success [:sucesso-insere-sumario]
+                   :on-failure [:falha-http]}})))
+
+(rf/reg-event-fx 
+ :insere-historico
+ (fn [{:keys [db]} _] 
+   (let [nome (:nome-atual db)]
+     {:db (registra-feedback db :resposta-mercado "Insere....")
+      :http-xhrio {:method :post
+                   :uri (operacao (str "/produtos/" nome "/historico"))
+                   :params {:preco (:cache-preco db) :local (:cache-local db)} 
+                   :format (ajax/json-request-format)
+                   :timeout TIMEOUT_ESCRITA
+                   :response-format (ajax/text-response-format)
+                   :on-success [:sucesso-insere-historico]
+                   :on-failure [:falha-http]}})))
 
 (rf/reg-event-fx 
  :consulta-historico
@@ -117,7 +142,7 @@
                  :uri (operacao (str "/produtos/" (name chave)))
                  :timeout TIMEOUT_LEITURA
                  :response-format (ajax/json-response-format {:keywords? true})
-                 :on-success [:sucesso-consulta-historico]
+                 :on-success [:sucesso-consulta-historico (name chave)]
                  :on-failure [:falha-http]}} ))
 
 
@@ -172,7 +197,7 @@
 
 
 ;; SUBS
-(def subss [:mercado :cache-nome :cache-preco :cache-local :produtos :view-id :nome-consultado :feedback :debug :historico :resposta-historico :cache-info])
+(def subss [:mercado :cache-nome :cache-preco :cache-local :produtos :view-id :nome-consultado :feedback :debug :historico :resposta-historico :cache-info :nome-atual])
 (doall (map #(rf/reg-sub % (fn [db _] (% db))) subss))
 
 ;; VIEW
@@ -386,9 +411,12 @@
          [footer]]))))
 
 (defn view-historico [] 
-  (let [historico (rf/subscribe [:historico])]
+  (let [historico (rf/subscribe [:historico])
+        nome-atual (rf/subscribe [:nome-atual])]
     [:div 
      [button :label "<" :class "btn-primary" :on-click #(rf/dispatch [:altera-view view-precos])]
+     [feedback]
+     [titulo @nome-atual :level2]
      [:table.table
       [:tbody
        [:tr 
@@ -419,14 +447,15 @@
        [:tr 
         [:td "Produto"] 
         [:td "Preço"]
-        [:td "Local"]]
+        [:td "Local"]
         [:td "Observação"] 
+        [:td ""]] 
        [:tr 
         [:td [input-element :cache-nome :cache-nome "Produto" identity]] 
         [:td [input-element :cache-preco :cache-preco "Preço" identity]] 
         [:td [input-element :cache-local :cache-local "Local" identity]] 
-        [:td [input-element :cache-info :cache-info "Observacao" identity]] 
-        [:td [button :label "+" :class "btn-primary" :on-click #(rf/dispatch [:insere-produto])]]]
+        [:td [input-element :cache-info :cache-info "Observação" identity]] 
+        [:td [button :label "+" :class "btn-primary" :on-click #(rf/dispatch [:insere-sumario])]]]
        (for [chave (sort (keys @produtos))]
          [:tr
           [:td chave] 
