@@ -79,7 +79,7 @@
  :sucesso-insere-historico
  (fn [db [_ result]]
    (do
-     (rf/dispatch [:consulta-historico (:nome-atual db)])
+     (rf/dispatch [:consulta-historico (:cache-nome db)])
      (registra-feedback db :resposta-produtos "Sucesso ao inserir historico"))))
 
 (rf/reg-event-db
@@ -104,7 +104,7 @@
      (assoc
          (registra-feedback db :resposta-produtos (str "Resultado consulta historico: " chave result))
        :historico result
-       :nome-atual chave))))
+       :cache-nome chave))))
 
 (rf/reg-event-fx 
  :insere-sumario
@@ -123,11 +123,11 @@
 (rf/reg-event-fx 
  :insere-historico
  (fn [{:keys [db]} _] 
-   (let [nome (:nome-atual db)]
+   (let [nome (:cache-nome db)]
      {:db (registra-feedback db :resposta-mercado "Insere....")
       :http-xhrio {:method :post
                    :uri (operacao (str "/produtos/" nome "/historico"))
-                   :params {:preco (:cache-preco db) :local (:cache-local db)} 
+                   :params {:preco (:cache-preco db) :local (:cache-local db) :obs (:cache-info db)} 
                    :format (ajax/json-request-format)
                    :timeout TIMEOUT_ESCRITA
                    :response-format (ajax/text-response-format)
@@ -197,7 +197,7 @@
 
 
 ;; SUBS
-(def subss [:mercado :cache-nome :cache-preco :cache-local :produtos :view-id :nome-consultado :feedback :debug :historico :resposta-historico :cache-info :nome-atual])
+(def subss [:mercado :cache-nome :cache-preco :cache-local :produtos :view-id :nome-consultado :feedback :debug :historico :resposta-historico :cache-info])
 (doall (map #(rf/reg-sub % (fn [db _] (% db))) subss))
 
 ;; VIEW
@@ -412,7 +412,7 @@
 
 (defn view-historico [] 
   (let [historico (rf/subscribe [:historico])
-        nome-atual (rf/subscribe [:nome-atual])]
+        nome-atual (rf/subscribe [:cache-nome])]
     [:div 
      [button :label "<" :class "btn-primary" :on-click #(rf/dispatch [:altera-view view-precos])]
      [feedback]
@@ -422,16 +422,19 @@
        [:tr 
         [:td "Preço"]
         [:td "Local"] 
+        [:td "Observação"] 
         [:td ""]]
        [:tr 
         [:td [input-element :cache-preco :cache-preco "Preço" identity]] 
         [:td [input-element :cache-local :cache-local "Local" identity]] 
+        [:td [input-element :cache-info :cache-info "Observação" identity]] 
         [:td [button :label "+" :class "btn-primary" :on-click #(rf/dispatch [:insere-historico])]]
         ]
        (for [h (:historico @historico)]
          [:tr
           [:td (str (:preco h))]
           [:td (str (:local h))]
+          [:td (str (:obs h))]
 ])]]]))
 
 
@@ -446,16 +449,24 @@
       [:tbody
        [:tr 
         [:td "Produto"] 
+        [:td "Observação"] 
+        [:td ""]] 
+       [:tr 
+        [:td [input-element :cache-nome :cache-nome "Produto" identity]] 
+        [:td [input-element :cache-info :cache-info "Observação" identity]] 
+        [:td [button :label "+s" :class "btn-primary" :on-click #(rf/dispatch [:insere-sumario])]]]
+       [:tr 
+        [:td "Produto"] 
         [:td "Preço"]
         [:td "Local"]
         [:td "Observação"] 
-        [:td ""]] 
+        [:td ""]]
        [:tr 
         [:td [input-element :cache-nome :cache-nome "Produto" identity]] 
         [:td [input-element :cache-preco :cache-preco "Preço" identity]] 
         [:td [input-element :cache-local :cache-local "Local" identity]] 
         [:td [input-element :cache-info :cache-info "Observação" identity]] 
-        [:td [button :label "+" :class "btn-primary" :on-click #(rf/dispatch [:insere-sumario])]]]
+        [:td [button :label "+h" :class "btn-primary" :on-click #(rf/dispatch [:insere-historico])]]]
        (for [chave (sort (keys @produtos))]
          [:tr
           [:td chave] 
