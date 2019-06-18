@@ -87,7 +87,7 @@
  (fn [db [_ result]]
    (do
      (rf/dispatch [:consulta-produtos])
-     (registra-feedback db :resposta-produtos "Sucesso ao inserir produto"))))
+     (registra-feedback db :resposta-produtos "Sucesso ao inserir sumario"))))
 
 (rf/reg-event-db
  :sucesso-produtos
@@ -113,7 +113,7 @@
      {:db (registra-feedback db :resposta-mercado "Insere....")
       :http-xhrio {:method :post
                    :uri (operacao (str "/produtos/" nome "/sumario"))
-                   :params {:obs (:cache-info db) :preco (:cache-preco db) :local (:cache-local db)} 
+                   :params (:cache-sumario db) 
                    :format (ajax/json-request-format)
                    :timeout TIMEOUT_ESCRITA
                    :response-format (ajax/text-response-format)
@@ -127,7 +127,7 @@
      {:db (registra-feedback db :resposta-mercado "Insere....")
       :http-xhrio {:method :post
                    :uri (operacao (str "/produtos/" nome "/historico"))
-                   :params {:preco (:cache-preco db) :local (:cache-local db) :obs (:cache-info db)} 
+                   :params {:preco (:cache-preco db) :local (:cache-local db) :obs (:cache-obs db)} 
                    :format (ajax/json-request-format)
                    :timeout TIMEOUT_ESCRITA
                    :response-format (ajax/text-response-format)
@@ -188,7 +188,8 @@
 
 (rf/reg-event-db :cache-nome (fn [db [_ nova-cache]] (assoc db :cache-nome (normaliza nova-cache))))
 (rf/reg-event-db :cache-local (fn [db [_ nova-cache]] (assoc db :cache-local nova-cache)))
-(rf/reg-event-db :cache-info (fn [db [_ nova-cache]] (assoc db :cache-info nova-cache)))
+(rf/reg-event-db :cache-obs (fn [db [_ nova-cache]] (assoc db :cache-obs nova-cache)))
+(rf/reg-event-db :cache-sumario (fn [db [_ nova-cache]] (assoc db :cache-sumario nova-cache)))
 (rf/reg-event-db :cache-preco (fn [db [_ nova-cache]] (assoc db :cache-preco
                                                              (if (str/includes? nova-cache ".") 
                                                                nova-cache
@@ -197,7 +198,7 @@
 
 
 ;; SUBS
-(def subss [:mercado :cache-nome :cache-preco :cache-local :produtos :view-id :nome-consultado :feedback :debug :historico :resposta-historico :cache-info])
+(def subss [:mercado :cache-nome :cache-preco :cache-local :produtos :view-id :nome-consultado :feedback :debug :historico :resposta-historico :cache-obs :cache-sumario])
 (doall (map #(rf/reg-sub % (fn [db _] (% db))) subss))
 
 ;; VIEW
@@ -274,14 +275,14 @@
    [input-element :cache-nome :cache-nome "Produto" identity] 
    [input-com-regex (input-element :cache-preco :cache-preco "Preco" identity) #"^[0-9]*(\.[0-9]{0,2})?$"]
    [input-element :cache-local :cache-local "Local" identity]
-   [input-element :cache-info :cache-info "Observacao" identity]
+   [input-element :cache-obs :cache-obs "Observacao" identity]
    [gap :size "2em"]
    [:div.espacados-horizontal
     [button :class "btn-primary"
      :label "Cadastra" 
      :on-click #(rf/dispatch [:cadastra {:nome @(rf/subscribe [:cache-nome])
                                          :local @(rf/subscribe [:cache-local])
-                                         :info @(rf/subscribe [:cache-info])
+                                         :info @(rf/subscribe [:cache-obs])
                                          :preco @(rf/subscribe [:cache-preco])}])]
 
     [button :label "Consulta Produto" :class "btn-secondary" :on-click #(rf/dispatch [:consulta @(rf/subscribe [:cache-nome])])]
@@ -427,7 +428,7 @@
        [:tr 
         [:td [input-element :cache-preco :cache-preco "Preço" identity]] 
         [:td [input-element :cache-local :cache-local "Local" identity]] 
-        [:td [input-element :cache-info :cache-info "Observação" identity]] 
+        [:td [input-element :cache-obs :cache-obs "Observação" identity]] 
         [:td [button :label "+" :class "btn-primary" :on-click #(rf/dispatch [:insere-historico])]]
         ]
        (for [h (:historico @historico)]
@@ -449,11 +450,11 @@
       [:tbody
        [:tr 
         [:td "Produto"] 
-        [:td "Observação"] 
+        [:td "Sumário"] 
         [:td ""]] 
        [:tr 
         [:td [input-element :cache-nome :cache-nome "Produto" identity]] 
-        [:td [input-element :cache-info :cache-info "Observação" identity]] 
+        [:td [input-element :cache-sumario :cache-sumario "Sumário" identity]] 
         [:td [button :label "+s" :class "btn-primary" :on-click #(rf/dispatch [:insere-sumario])]]]
        [:tr 
         [:td "Produto"] 
@@ -465,14 +466,18 @@
         [:td [input-element :cache-nome :cache-nome "Produto" identity]] 
         [:td [input-element :cache-preco :cache-preco "Preço" identity]] 
         [:td [input-element :cache-local :cache-local "Local" identity]] 
-        [:td [input-element :cache-info :cache-info "Observação" identity]] 
+        [:td [input-element :cache-obs :cache-obs "Observação" identity]] 
         [:td [button :label "+h" :class "btn-primary" :on-click #(rf/dispatch [:insere-historico])]]]
+       [:tr 
+        [:td "Produto"] 
+        [:td "Melhor preço"]
+        [:td "Sumário"] 
+        [:td ""]]
        (for [chave (sort (keys @produtos))]
          [:tr
           [:td chave] 
-          [:td (:preco (:sumario ((keyword chave) @produtos)))]
-          [:td (:local (:sumario ((keyword chave) @produtos)))]
-          [:td (:obs (:sumario ((keyword chave) @produtos)))]
+          [:td (:melhor-preco ((keyword chave) @produtos))]
+          [:td (:sumario ((keyword chave) @produtos))]
           [:td [button :label "+" :class "btn-primary" :on-click #(rf/dispatch [:consulta-historico chave])]]
           ])]]
      [footer]]))
