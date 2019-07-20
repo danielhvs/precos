@@ -113,7 +113,7 @@
      {:db (registra-feedback db :resposta-mercado "Insere....")
       :http-xhrio {:method :post
                    :uri (operacao (str "/produtos/" nome "/sumario"))
-                   :params (:cache-sumario db) 
+                   :params {:sumario (:cache-sumario db)} 
                    :format (ajax/json-request-format)
                    :timeout TIMEOUT_ESCRITA
                    :response-format (ajax/text-response-format)
@@ -136,13 +136,13 @@
 
 (rf/reg-event-fx 
  :consulta-historico
- (fn [{:keys [db]} [_ chave]] 
-   {:db (assoc db :resposta-mercado (str "Consultando " chave "..."))
+ (fn [{:keys [db]} [_ nome]] 
+   {:db (assoc db :resposta-mercado (str "Consultando " nome "..."))
     :http-xhrio {:method :get
-                 :uri (operacao (str "/produtos/" (name chave)))
+                 :uri (operacao (str "/produtos/" nome))
                  :timeout TIMEOUT_LEITURA
                  :response-format (ajax/json-response-format {:keywords? true})
-                 :on-success [:sucesso-consulta-historico (name chave)]
+                 :on-success [:sucesso-consulta-historico nome]
                  :on-failure [:falha-http]}} ))
 
 
@@ -473,12 +473,12 @@
         [:td "Melhor preço"]
         [:td "Sumário"] 
         [:td ""]]
-       (for [chave (sort (keys @produtos))]
+       (for [p @produtos]
          [:tr
-          [:td chave] 
-          [:td (:melhor-preco ((keyword chave) @produtos))]
-          [:td (:sumario ((keyword chave) @produtos))]
-          [:td [button :label "+" :class "btn-primary" :on-click #(rf/dispatch [:consulta-historico chave])]]
+          [:td (:nome p)] 
+          [:td (:melhor-preco p)]
+          [:td (:sumario p)]
+          [:td [button :label "+" :class "btn-primary" :on-click #(rf/dispatch [:consulta-historico (:nome p)])]]
           ])]]
      [footer]]))
 
