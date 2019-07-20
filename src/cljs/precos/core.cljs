@@ -57,7 +57,8 @@
 (defn formata-data [p]
   p)
 (defn nao-tem-preco [preco]
-  (> preco 999998))
+  (or (nil? preco)
+   (> preco 999998)))
 (defn formata-preco [preco]
   (if (nao-tem-preco preco) 
     "-"
@@ -253,7 +254,7 @@
         ]
        (for [h (:historico @historico)]
          [:tr
-          [:td (str (:preco h))]
+          [:td (str (formata-preco (:preco h)))]
           [:td (str (:local h))]
           [:td (str (:obs h))]
 ])]]]))
@@ -295,7 +296,7 @@
        (for [p @produtos]
          [:tr
           [:td (:nome p)] 
-          [:td (:melhor-preco p)]
+          [:td (formata-preco (:melhor-preco p))]
           [:td (:sumario p)]
           [:td [button :label "+" :class "btn-primary" :on-click #(rf/dispatch [:consulta-historico (:nome p)])]]
           ])]]
