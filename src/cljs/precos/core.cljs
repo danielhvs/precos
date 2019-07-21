@@ -230,37 +230,34 @@
 (defn view-historico [] 
   (let [historico (rf/subscribe [:historico])
         nome-atual (rf/subscribe [:cache-nome])]
-    [:div 
-     [button :label "<" :class "btn-primary" :on-click #(rf/dispatch [:altera-view view-precos])]
-     [feedback]
-     [titulo @nome-atual :level2]
-     [:table.table
-      [:tbody
-       [:tr 
-        [:td "Preço"]
-        [:td "Local"] 
-        [:td "Observação"] 
-        [:td ""]]
-       [:tr 
-        [:td [input-element :cache-preco :cache-preco "Preço" identity]] 
-        [:td [input-element :cache-local :cache-local "Local" identity]] 
-        [:td [input-element :cache-obs :cache-obs "Observação" identity]] 
-        [:td [button :label "+" :class "btn-primary" :on-click #(rf/dispatch [:insere-historico])]]
-        ]
-       (for [h (:historico @historico)]
-         [:tr
-          [:td (str (formata-preco (:preco h)))]
-          [:td (str (:local h))]
-          [:td (str (:obs h))]
-])]]]))
+    [v-box :gap "10px" :size "auto" 
+     :children [[titulo @nome-atual :level2]
+                [h-box :gap "10px" 
+                 :children [[button :label "<" :class "btn-primary" :on-click #(rf/dispatch [:altera-view view-precos])]
+                            [feedback]]]
+                [:table
+                 [:tbody
+                  [:tr 
+                   [:td [input-element :cache-preco :cache-preco "Preço" identity]] 
+                   [:td [input-element :cache-local :cache-local "Local" identity]] 
+                   [:td [input-element :cache-obs :cache-obs "Observação" identity]] 
+                   [:td [button :label "+" :class "btn-primary" :on-click #(rf/dispatch [:insere-historico])]]
+                   ]
+                  (for [h (:historico @historico)]
+                    [:tr
+                     [:td (str (formata-preco (:preco h)))]
+                     [:td (str (:local h))]
+                     [:td (str (:obs h))]
+                     ])]]]]))
 
 (defn view-precos [] 
   (let [produtos (rf/subscribe [:produtos])]
     [v-box 
      :gap "10px" 
      :size "auto" 
-     :children [[feedback]
-                [botao-consulta-mercado "Consulta Melhores Precos"]
+     :children [[h-box :gap "10px" 
+                 :children [[botao-consulta-mercado "Consulta Melhores Precos"] 
+                            [feedback]]]
                 [h-box :gap "10px" 
                  :size "auto" 
                  :children [[input-element :cache-nome :cache-nome "Produto" identity] 
