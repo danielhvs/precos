@@ -232,6 +232,7 @@
         nome-atual (rf/subscribe [:cache-nome])]
     [v-box :gap "10px" :size "auto" 
      :children [[titulo @nome-atual :level2]
+                [label :label (:sumario @historico)]
                 [h-box :gap "10px" 
                  :children [[button :label "<" :class "btn-primary" :on-click #(rf/dispatch [:altera-view view-precos])]
                             [feedback]]]
