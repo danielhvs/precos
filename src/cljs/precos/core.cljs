@@ -72,27 +72,27 @@
 (rf/reg-event-db
  :falha-http
  (fn [db [_ result]]
-   (registra-feedback db :resposta-produtos (str "Erro: " (:status-text result)))))
+   (registra-feedback db :resposta (str "Erro: " (:status-text result)))))
 
 (rf/reg-event-db
  :sucesso-insere-historico
  (fn [db [_ result]]
    (do
      (rf/dispatch [:consulta-historico (:cache-nome db)])
-     (registra-feedback db :resposta-produtos "Sucesso ao inserir historico"))))
+     (registra-feedback db :resposta "Sucesso ao inserir historico"))))
 
 (rf/reg-event-db
  :sucesso-insere-sumario
  (fn [db [_ result]]
    (do
      (rf/dispatch [:consulta-produtos])
-     (registra-feedback db :resposta-produtos "Sucesso ao inserir sumario"))))
+     (registra-feedback db :resposta "Sucesso ao inserir sumario"))))
 
 (rf/reg-event-db
  :sucesso-produtos
  (fn [db [_ result]]
    (assoc
-       (registra-feedback db :resposta-produtos "Sucesso ao consultar produtos")
+       (registra-feedback db :resposta "Sucesso ao consultar produtos")
      :produtos result)))
 
 (rf/reg-event-db
@@ -101,7 +101,7 @@
    (do
      (rf/dispatch [:altera-view view-historico])
      (assoc
-         (registra-feedback db :resposta-produtos "Sucesso ao consultar produtos")
+         (registra-feedback db :resposta "Sucesso ao consultar produtos")
        :historico result
        :cache-nome chave))))
 
@@ -109,7 +109,7 @@
  :insere-sumario
  (fn [{:keys [db]} _] 
    (let [nome (:cache-nome db)]
-     {:db (registra-feedback db :resposta-mercado "Insere....")
+     {:db (registra-feedback db :resposta "Insere....")
       :http-xhrio {:method :post
                    :uri (operacao (str "/produtos/" nome "/sumario"))
                    :params {:sumario (:cache-sumario db)} 
@@ -123,7 +123,7 @@
  :insere-historico
  (fn [{:keys [db]} _] 
    (let [nome (:cache-nome db)]
-     {:db (registra-feedback db :resposta-mercado "Insere....")
+     {:db (registra-feedback db :resposta "Insere....")
       :http-xhrio {:method :post
                    :uri (operacao (str "/produtos/" nome "/historico"))
                    :params {:preco (:cache-preco db) :local (:cache-local db) :obs (:cache-obs db)} 
@@ -136,7 +136,7 @@
 (rf/reg-event-fx 
  :consulta-historico
  (fn [{:keys [db]} [_ nome]] 
-   {:db (assoc db :resposta-mercado (str "Consultando " nome "..."))
+   {:db (assoc db :resposta (str "Consultando " nome "..."))
     :http-xhrio {:method :get
                  :uri (operacao (str "/produtos/" nome))
                  :timeout TIMEOUT_LEITURA
@@ -148,7 +148,7 @@
 (rf/reg-event-fx 
  :consulta-produtos
  (fn [{:keys [db]} _] 
-   {:db (registra-feedback db :resposta-mercado "Consultando produtos...")
+   {:db (registra-feedback db :resposta "Consultando produtos...")
     :http-xhrio {:method :get
                  :uri (operacao "/produtos")
                  :timeout TIMEOUT_LEITURA
@@ -179,7 +179,7 @@
 
 
 ;; SUBS
-(def subss [:cache-nome :cache-preco :cache-local :produtos :view-id :nome-consultado :feedback :debug :historico :resposta-historico :cache-obs :cache-sumario])
+(def subss [:cache-nome :cache-preco :cache-local :produtos :view-id :nome-consultado :feedback :debug :historico :cache-obs :cache-sumario])
 (doall (map #(rf/reg-sub % (fn [db _] (% db))) subss))
 
 ;; VIEW
