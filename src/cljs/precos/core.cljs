@@ -224,7 +224,7 @@
 
 (defn pagina-toda []
   (let [view (rf/subscribe [:view-id])]
-    [:div.view
+    [:div
      [@view]]))
 
 (defn view-historico [] 
@@ -259,8 +259,7 @@
     [v-box 
      :gap "10px" 
      :size "auto" 
-     :children [[header]
-                [feedback]
+     :children [[feedback]
                 [botao-consulta-mercado "Consulta Melhores Precos"]
                 [h-box :gap "10px" 
                  :size "auto" 
@@ -274,7 +273,7 @@
                             [input-element :cache-local :cache-local "Local" identity] 
                             [input-element :cache-obs :cache-obs "Observação" identity] 
                             [button :label "+h" :class "btn-primary" :on-click #(rf/dispatch [:insere-historico])]]]
-                [:table
+                [:table.table
                  (for [p @produtos]
                    [:tr
                     [:td (:nome p)] 
