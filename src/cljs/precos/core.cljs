@@ -13,8 +13,7 @@
             [re-com.misc :refer [throbber input-text]]
             [re-com.text :refer [label title]]
             [re-com.tabs :refer [horizontal-tabs]]
-            [re-com.modal-panel :refer [modal-panel]
-             ]
+            [re-com.modal-panel :refer [modal-panel]]
             [cljs-http.client :as http]
             [goog.string :as gstring]
             [cljs.core.async :refer [<!]]
@@ -28,8 +27,8 @@
 (declare view-cadastro)
 (declare view-precos)
 (declare view-historico)
-(def servidor "https://infinite-crag-89428.herokuapp.com")
-#_(def servidor "http://localhost:3000")
+#_(def servidor "https://infinite-crag-89428.herokuapp.com")
+(def servidor "http://localhost:3000")
 
 (defonce ^const TIMEOUT_ESCRITA 20000)
 (defonce ^const TIMEOUT_LEITURA 30000)
@@ -198,7 +197,7 @@
 
 (defn input-element
   [value funcao placeholder f]
-  [input-text
+  [input-text :width "8em"
    :placeholder placeholder
    :model (str @(rf/subscribe [value]))
    :on-change #(rf/dispatch [funcao (f %)])])
@@ -222,10 +221,6 @@
       #_[:li [:button {:on-click #(rf/dispatch [:altera-view view-cadastro]) :class (->class view-cadastro)} "Cadastro" ]]
       ]])
 )
-
-(defn footer []
-  [:div]
-  #_[:div.debug (str "DEBUG: " @(rf/subscribe [:debug]))])
 
 (defn pagina-toda []
   (let [view (rf/subscribe [:view-id])]
@@ -261,46 +256,31 @@
 
 (defn view-precos [] 
   (let [produtos (rf/subscribe [:produtos])]
-    [:div.espacados-vertical
-     [header]
-     [feedback]
-     [botao-consulta-mercado "Consulta Melhores Precos"]
-     [gap :size "2em"]
-     [:table.table
-      [:tbody
-       [:tr 
-        [:td "Produto"] 
-        [:td "Sumário"] 
-        [:td ""]] 
-       [:tr 
-        [:td [input-element :cache-nome :cache-nome "Produto" identity]] 
-        [:td [input-element :cache-sumario :cache-sumario "Sumário" identity]] 
-        [:td [button :label "+s" :class "btn-primary" :on-click #(rf/dispatch [:insere-sumario])]]]
-       [:tr 
-        [:td "Produto"] 
-        [:td "Preço"]
-        [:td "Local"]
-        [:td "Observação"] 
-        [:td ""]]
-       [:tr 
-        [:td [input-element :cache-nome :cache-nome "Produto" identity]] 
-        [:td [input-element :cache-preco :cache-preco "Preço" identity]] 
-        [:td [input-element :cache-local :cache-local "Local" identity]] 
-        [:td [input-element :cache-obs :cache-obs "Observação" identity]] 
-        [:td [button :label "+h" :class "btn-primary" :on-click #(rf/dispatch [:insere-historico])]]]
-       [:tr 
-        [:td "Produto"] 
-        [:td "Melhor preço"]
-        [:td "Sumário"] 
-        [:td ""]]
-       (for [p @produtos]
-         [:tr
-          [:td (:nome p)] 
-          [:td (formata-preco (:melhor-preco p))]
-          [:td (:sumario p)]
-          [:td [button :label "+" :class "btn-primary" :on-click #(rf/dispatch [:consulta-historico (:nome p)])]]
-          ])]]
-     [footer]]))
+    [v-box 
+     :gap "10px" 
+     :size "auto" 
+     :children [[header]
+                [feedback]
+                [botao-consulta-mercado "Consulta Melhores Precos"]
+                [h-box :gap "10px" 
+                 :size "auto" 
+                 :children [[input-element :cache-nome :cache-nome "Produto" identity] 
+                            [input-element :cache-sumario :cache-sumario "Sumário" identity] 
+                            [button :label "+s" :class "btn-primary" :on-click #(rf/dispatch [:insere-sumario])]]] 
+                [h-box :gap "10px" 
+                 :size "auto" 
+                 :children [[input-element :cache-nome :cache-nome "Produto" identity] 
+                            [input-element :cache-preco :cache-preco "Preço" identity] 
+                            [input-element :cache-local :cache-local "Local" identity] 
+                            [input-element :cache-obs :cache-obs "Observação" identity] 
+                            [button :label "+h" :class "btn-primary" :on-click #(rf/dispatch [:insere-historico])]]]
+                [:table
+                 (for [p @produtos]
+                   [:tr
+                    [:td (:nome p)] 
+                    [:td (formata-preco (:melhor-preco p))]
+                    [:td (:sumario p)]
+                    [button :label "+" :class "btn-primary" :on-click #(rf/dispatch [:consulta-historico (:nome p)])]])]]]))
 
 ;; -------------------------
 ;; Routes
