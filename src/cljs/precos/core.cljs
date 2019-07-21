@@ -101,7 +101,7 @@
    (do
      (rf/dispatch [:altera-view view-historico])
      (assoc
-         (registra-feedback db :resposta-produtos (str "Resultado consulta historico: " chave result))
+         (registra-feedback db :resposta-produtos "Sucesso ao consultar produtos")
        :historico result
        :cache-nome chave))))
 
@@ -273,13 +273,13 @@
                             [input-element :cache-local :cache-local "Local" identity] 
                             [input-element :cache-obs :cache-obs "Observação" identity] 
                             [button :label "+h" :class "btn-primary" :on-click #(rf/dispatch [:insere-historico])]]]
-                [:table.table
+                [:table
                  (for [p @produtos]
                    [:tr
-                    [:td (:nome p)] 
+                    [button :label (:nome p) :class "btn-link" :on-click #(rf/dispatch [:consulta-historico (:nome p)])]
                     [:td (formata-preco (:melhor-preco p))]
                     [:td (:sumario p)]
-                    [button :label "+" :class "btn-primary" :on-click #(rf/dispatch [:consulta-historico (:nome p)])]])]]]))
+                    ])]]]))
 
 ;; -------------------------
 ;; Routes
