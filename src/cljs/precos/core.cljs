@@ -10,6 +10,7 @@
             [cljs-time.local :as l]
             [re-com.buttons :refer [button md-circle-icon-button]]
             [re-com.box :refer [h-box v-box box gap]]
+            [re-com.alert :refer [alert-box]]
             [re-com.misc :refer [throbber input-text]]
             [re-com.text :refer [label title]]
             [re-com.tabs :refer [horizontal-tabs]]
@@ -191,9 +192,8 @@
 (defn feedback []
   (let [feedback (rf/subscribe [:feedback])]
     (when (not (empty? @feedback))
-      [:div
-       (for [f (keys @feedback)]
-         [:div (f @feedback)])])))
+      [alert-box :heading [:div (for [k (keys @feedback)]
+                               (k @feedback))]])))
 
 (defn input-element
   [value funcao placeholder f]
@@ -230,15 +230,14 @@
 (defn view-historico [] 
   (let [historico (rf/subscribe [:historico])
         nome-atual (rf/subscribe [:cache-nome])]
-    [v-box :gap "10px" :size "auto" 
-     :children [[titulo @nome-atual :level2]
+    [v-box :gap "10px"
+     :children [[feedback]
+                [titulo @nome-atual :level2]
                 [label :label (:sumario @historico)]
-                [h-box :gap "10px" 
-                 :children [[button :label "<" :class "btn-primary" :on-click #(rf/dispatch [:altera-view view-precos])]
-                            [feedback]]]
                 [:table
                  [:tbody
                   [:tr 
+                   [button :label "<" :class "btn-primary" :on-click #(rf/dispatch [:altera-view view-precos])]
                    [:td [input-element :cache-preco :cache-preco "Preço" identity]] 
                    [:td [input-element :cache-local :cache-local "Local" identity]] 
                    [:td [input-element :cache-obs :cache-obs "Observação" identity]] 
@@ -256,9 +255,10 @@
     [v-box 
      :gap "10px" 
      :size "auto" 
-     :children [[h-box :gap "10px" 
-                 :children [[botao-consulta-mercado "Consulta Melhores Precos"] 
-                            [feedback]]]
+     :children [[v-box
+                 :children [[feedback]
+                            [botao-consulta-mercado "Consulta Melhores Precos"] 
+                            ]]
                 [h-box :gap "10px" 
                  :size "auto" 
                  :children [[input-element :cache-nome :cache-nome "Produto" identity] 
