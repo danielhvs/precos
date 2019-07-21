@@ -27,8 +27,8 @@
 (declare view-cadastro)
 (declare view-precos)
 (declare view-historico)
-#_(def servidor "https://infinite-crag-89428.herokuapp.com")
-(def servidor "http://localhost:3000")
+(def servidor "https://infinite-crag-89428.herokuapp.com")
+#_(def servidor "http://localhost:3000")
 
 (defonce ^const TIMEOUT_ESCRITA 20000)
 (defonce ^const TIMEOUT_LEITURA 30000)
