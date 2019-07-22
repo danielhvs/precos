@@ -204,9 +204,6 @@
 
 ;; -------------------------
 ;; Views
-(defn botao-consulta-mercado [texto]
-  [button :label texto :class "btn-primary" :on-click #(rf/dispatch [:consulta-produtos])])
-
 (defn titulo [t l]
   [title :underline? true :level l :label t])
 
@@ -257,7 +254,7 @@
      :size "auto" 
      :children [[v-box
                  :children [[feedback]
-                            [botao-consulta-mercado "Consulta Melhores Precos"] 
+                            [button :label "Consulta" :class "btn-primary" :on-click #(rf/dispatch [:consulta-produtos])]
                             ]]
                 [h-box :gap "10px" 
                  :size "auto" 
