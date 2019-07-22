@@ -14,6 +14,7 @@
             [re-com.misc :refer [throbber input-text]]
             [re-com.text :refer [label title]]
             [re-com.tabs :refer [horizontal-tabs]]
+            [re-com.core :refer [line]]
             [re-com.modal-panel :refer [modal-panel]]
             [cljs-http.client :as http]
             [goog.string :as gstring]
@@ -225,44 +226,51 @@
     [:div
      [@view]]))
 
+(defn template [botao conteudo]
+  [v-box :gap "10px" 
+   :children [[gap :size "10px"]
+              [h-box
+               :children [[gap :size "10px"]
+                          [v-box :gap "10px"
+                           :children [[h-box :gap "10px" 
+                                       :children [botao
+                                                  [feedback]
+                                                  ]]
+                                      [line :size "3px" :color "green"]
+                                      conteudo
+                                      ]]]]]])
+
 (defn view-historico [] 
   (let [historico (rf/subscribe [:historico])
         nome-atual (rf/subscribe [:cache-nome])]
-    [v-box :gap "10px"
-     :children [
-                [feedback]
-                [button :label "<" :class "btn-primary" :on-click #(rf/dispatch [:altera-view view-precos])]
-                [titulo @nome-atual :level2]
-                [label :label (:sumario @historico)]
-                [:table
-                 [:tbody
-                  (for [h (:historico @historico)]
-                    [:tr
-                     [:td (str (formata-preco (:preco h)))]
-                     [:td (str (:local h))]
-                     [:td (str (:obs h))]
-                     ])]]]]))
+    (template 
+     [button :label "<" :class "btn-primary" :on-click #(rf/dispatch [:altera-view view-precos])]
+     [:div
+      [titulo @nome-atual :level2]
+      [label :label (:sumario @historico)]
+      [:table
+       [:tbody
+        (for [h (:historico @historico)]
+          [:tr
+           [:td (str (formata-preco (:preco h)))]
+           [:td (str (:local h))]
+           [:td (str (:obs h))]
+           ])]]]
+     )
+))
 
 (defn view-precos [] 
   (let [produtos (rf/subscribe [:produtos])]
-    [v-box :gap "10px" 
-     :children [[gap :size "10px"]
-                [h-box
-                 :children [[gap :size "10px"]
-                            [v-box :gap "10px"
-                             :children [[h-box :gap "10px" 
-                                         :children [
-                                                    [button :label "Consulta" :class "btn-primary" :on-click #(rf/dispatch [:consulta-produtos])]
-                                                    [feedback]
-                                                    ]]
-                                        [line :size "3px" :color "green"]
-                                        [:table
-                                         (for [p @produtos]
-                                           [:tr
-                                            [button :label (:nome p) :class "btn-link" :on-click #(rf/dispatch [:consulta-historico (:nome p)])]
-                                            [:td (formata-preco (:melhor-preco p))]
-                                            [:td (:sumario p)]
-                                            ])]]]]]]]))
+    (template 
+     [button :label "Consulta" :class "btn-primary" :on-click #(rf/dispatch [:consulta-produtos])]
+     [:table
+      [:tbody
+       (for [p @produtos]
+         [:tr
+          [button :label (:nome p) :class "btn-link" :on-click #(rf/dispatch [:consulta-historico (:nome p)])]
+          [:td (formata-preco (:melhor-preco p))]
+          [:td (:sumario p)]
+          ])]])))
 
 ;; -------------------------
 ;; Routes
