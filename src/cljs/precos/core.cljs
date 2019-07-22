@@ -138,7 +138,7 @@
 (rf/reg-event-fx 
  :consulta-historico
  (fn [{:keys [db]} [_ nome]] 
-   {:db (assoc db :resposta (str "Consultando " nome "..."))
+   {:db (registra-feedback db :resposta (str "Consultando " nome "..."))
     :http-xhrio {:method :get
                  :uri (operacao (str "/produtos/" nome))
                  :timeout TIMEOUT_LEITURA
