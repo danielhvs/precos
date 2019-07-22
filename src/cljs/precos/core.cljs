@@ -265,7 +265,7 @@
      [button :label "Consulta" :class "btn-primary" :on-click #(rf/dispatch [:consulta-produtos])]
      [:table
       [:tbody
-       (for [p @produtos]
+       (for [p (sort-by :nome @produtos)]
          [:tr
           [button :label (:nome p) :class "btn-link" :on-click #(rf/dispatch [:consulta-historico (:nome p)])]
           [:td (formata-preco (:melhor-preco p))]
