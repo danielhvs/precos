@@ -228,18 +228,13 @@
   (let [historico (rf/subscribe [:historico])
         nome-atual (rf/subscribe [:cache-nome])]
     [v-box :gap "10px"
-     :children [[feedback]
+     :children [
+                [feedback]
+                [button :label "<" :class "btn-primary" :on-click #(rf/dispatch [:altera-view view-precos])]
                 [titulo @nome-atual :level2]
                 [label :label (:sumario @historico)]
                 [:table
                  [:tbody
-                  [:tr 
-                   [button :label "<" :class "btn-primary" :on-click #(rf/dispatch [:altera-view view-precos])]
-                   [:td [input-element :cache-preco :cache-preco "Preço" identity]] 
-                   [:td [input-element :cache-local :cache-local "Local" identity]] 
-                   [:td [input-element :cache-obs :cache-obs "Observação" identity]] 
-                   [:td [button :label "+" :class "btn-primary" :on-click #(rf/dispatch [:insere-historico])]]
-                   ]
                   (for [h (:historico @historico)]
                     [:tr
                      [:td (str (formata-preco (:preco h)))]
@@ -256,18 +251,6 @@
                  :children [[feedback]
                             [button :label "Consulta" :class "btn-primary" :on-click #(rf/dispatch [:consulta-produtos])]
                             ]]
-                [h-box :gap "10px" 
-                 :size "auto" 
-                 :children [[input-element :cache-nome :cache-nome "Produto" identity] 
-                            [input-element :cache-sumario :cache-sumario "Sumário" identity] 
-                            [button :label "+s" :class "btn-primary" :on-click #(rf/dispatch [:insere-sumario])]]] 
-                [h-box :gap "10px" 
-                 :size "auto" 
-                 :children [[input-element :cache-nome :cache-nome "Produto" identity] 
-                            [input-element :cache-preco :cache-preco "Preço" identity] 
-                            [input-element :cache-local :cache-local "Local" identity] 
-                            [input-element :cache-obs :cache-obs "Observação" identity] 
-                            [button :label "+h" :class "btn-primary" :on-click #(rf/dispatch [:insere-historico])]]]
                 [:table
                  (for [p @produtos]
                    [:tr
