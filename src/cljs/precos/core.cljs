@@ -80,20 +80,20 @@
  (fn [db [_ result]]
    (do
      (rf/dispatch [:consulta-historico (:cache-nome db)])
-     (registra-feedback db :resposta "Sucesso ao inserir historico"))))
+     (registra-feedback db :resposta ""))))
 
 (rf/reg-event-db
  :sucesso-insere-sumario
  (fn [db [_ result]]
    (do
      (rf/dispatch [:consulta-produtos])
-     (registra-feedback db :resposta "Sucesso ao inserir sumario"))))
+     (registra-feedback db :resposta ""))))
 
 (rf/reg-event-db
  :sucesso-produtos
  (fn [db [_ result]]
    (assoc
-       (registra-feedback db :resposta "Sucesso ao consultar produtos")
+       (registra-feedback db :resposta "")
      :produtos result)))
 
 (rf/reg-event-db
@@ -102,7 +102,7 @@
    (do
      (rf/dispatch [:altera-view view-historico])
      (assoc
-         (registra-feedback db :resposta "Sucesso ao consultar produtos")
+         (registra-feedback db :resposta "")
        :historico result
        :cache-nome chave))))
 
@@ -191,9 +191,10 @@
 ;; Componentes
 (defn feedback []
   (let [feedback (rf/subscribe [:feedback])]
-    (when (not (empty? @feedback))
-      [alert-box :heading [:div (for [k (keys @feedback)]
-                               (k @feedback))]])))
+    (if (not (empty? @feedback))
+      [label :label [:div (for [k (keys @feedback)]
+                               (k @feedback))]]
+      [:div])))
 
 (defn input-element
   [value funcao placeholder f]
@@ -244,20 +245,24 @@
 
 (defn view-precos [] 
   (let [produtos (rf/subscribe [:produtos])]
-    [v-box 
-     :gap "10px" 
-     :size "auto" 
-     :children [[v-box
-                 :children [[feedback]
-                            [button :label "Consulta" :class "btn-primary" :on-click #(rf/dispatch [:consulta-produtos])]
-                            ]]
-                [:table
-                 (for [p @produtos]
-                   [:tr
-                    [button :label (:nome p) :class "btn-link" :on-click #(rf/dispatch [:consulta-historico (:nome p)])]
-                    [:td (formata-preco (:melhor-preco p))]
-                    [:td (:sumario p)]
-                    ])]]]))
+    [v-box :gap "10px" 
+     :children [[gap :size "10px"]
+                [h-box
+                 :children [[gap :size "10px"]
+                            [v-box :gap "10px"
+                             :children [[h-box :gap "10px" 
+                                         :children [
+                                                    [button :label "Consulta" :class "btn-primary" :on-click #(rf/dispatch [:consulta-produtos])]
+                                                    [feedback]
+                                                    ]]
+                                        [line :size "3px" :color "green"]
+                                        [:table
+                                         (for [p @produtos]
+                                           [:tr
+                                            [button :label (:nome p) :class "btn-link" :on-click #(rf/dispatch [:consulta-historico (:nome p)])]
+                                            [:td (formata-preco (:melhor-preco p))]
+                                            [:td (:sumario p)]
+                                            ])]]]]]]]))
 
 ;; -------------------------
 ;; Routes
