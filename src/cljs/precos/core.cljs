@@ -228,7 +228,7 @@
 
 (defn template [botao conteudo]
   [v-box :gap "10px" 
-   :children [[gap :size "10px"]
+   :children [[gap :size "0px"]
               [h-box
                :children [[gap :size "10px"]
                           [v-box :gap "10px"
