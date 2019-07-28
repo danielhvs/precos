@@ -246,16 +246,20 @@
     (template 
      [button :label "<" :class "btn-primary" :on-click #(rf/dispatch [:altera-view view-precos])]
      [:div
-      [titulo @nome-atual :level2]
-      [label :label (:sumario @historico)]
-      [:table
-       [:tbody
-        (for [h (:historico @historico)]
-          [:tr
-           [:td (str (formata-preco (:preco h)))]
-           [:td (str (:local h))]
-           [:td (str (:obs h))]
-           ])]]]
+      [v-box :gap "10px"
+       :children [[titulo @nome-atual :level2]
+                  (let [sumario (:sumario @historico)]
+                    (if (empty? sumario)
+                      [:div]
+                      [alert-box :heading sumario]))
+                  [:table
+                   [:tbody
+                    (for [h (:historico @historico)]
+                      [:tr
+                       [:td (str (formata-preco (:preco h)))]
+                       [:td (str (:local h))]
+                       [:td (str (:obs h))]
+                       ])]]]]]
      )
 ))
 
