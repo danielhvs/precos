@@ -207,7 +207,7 @@
 ;; -------------------------
 ;; Views
 (defn titulo [t l]
-  [title :underline? true :level l :label t])
+  [title :underline? false :level l :label t])
 
 (defn header []
   (let [view-id (rf/subscribe [:view-id])
@@ -236,7 +236,6 @@
                                        :children [botao
                                                   [feedback]
                                                   ]]
-                                      [line :size "3px" :color "green"]
                                       conteudo
                                       ]]]]]])
 
@@ -252,13 +251,13 @@
                     (if (empty? sumario)
                       [:div]
                       [alert-box :heading sumario]))
-                  [:table
+                  [:table.table
                    [:tbody
                     (for [h (:historico @historico)]
                       [:tr
-                       [:td (str (formata-preco (:preco h)))]
-                       [:td (str (:local h))]
-                       [:td (str (:obs h))]
+                       [:td (formata-preco (:preco h))]
+                       [:td (:local h)]
+                       [:td (:obs h)]
                        ])]]]]]
      )
 ))
@@ -267,11 +266,12 @@
   (let [produtos (rf/subscribe [:produtos])]
     (template 
      [button :label "Consulta" :class "btn-primary" :on-click #(rf/dispatch [:consulta-produtos])]
-     [:table
+     [:table.table
       [:tbody
        (for [p (sort-by :nome @produtos)]
          [:tr
-          [button :label (:nome p) :class "btn-link" :on-click #(rf/dispatch [:consulta-historico (:nome p)])]
+          [:td
+           [button :label (:nome p) :class "btn-link" :on-click #(rf/dispatch [:consulta-historico (:nome p)])]]
           [:td (formata-preco (:melhor-preco p))]
           [:td (:sumario p)]
           ])]])))
