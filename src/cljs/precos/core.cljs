@@ -29,6 +29,7 @@
 (declare view-cadastro)
 (declare view-precos)
 (declare view-historico)
+(declare view-lista)
 (def servidor "https://infinite-crag-89428.herokuapp.com")
 #_(def servidor "http://localhost:3000")
 
@@ -158,6 +159,16 @@
                  :on-success [:sucesso-produtos]
                  :on-failure [:falha-http]}}))
 
+(defn lista [db]
+  (map (fn [e] {:comprar true :nome (:nome e)}) (:produtos db)) )
+
+(rf/reg-event-db
+ :lista
+ (fn [db [_ novo]] 
+   (do
+     (rf/dispatch [:altera-view view-lista])
+     (assoc db :lista (lista db)))))
+
 (rf/reg-event-db
  :altera-view 
  (fn [db [_ novo]] 
@@ -181,7 +192,7 @@
 
 
 ;; SUBS
-(def subss [:cache-nome :cache-preco :cache-local :produtos :view-id :nome-consultado :feedback :debug :historico :cache-obs :cache-sumario])
+(def subss [:cache-nome :cache-preco :cache-local :produtos :view-id :nome-consultado :feedback :debug :historico :cache-obs :cache-sumario :lista])
 (doall (map #(rf/reg-sub % (fn [db _] (% db))) subss))
 
 ;; VIEW
@@ -226,16 +237,15 @@
     [:div
      [@view]]))
 
-(defn template [botao conteudo]
+(defn template [header conteudo]
   [v-box :gap "10px" 
    :children [[gap :size "0px"]
               [h-box
                :children [[gap :size "10px"]
                           [v-box :gap "10px"
                            :children [[h-box :gap "10px" 
-                                       :children [botao
-                                                  [feedback]
-                                                  ]]
+                                       :children header]
+                                      [line :size "3px" :color "green"]
                                       conteudo
                                       ]]]]]])
 
@@ -243,7 +253,9 @@
   (let [historico (rf/subscribe [:historico])
         nome-atual (rf/subscribe [:cache-nome])]
     (template 
-     [button :label "<" :class "btn-primary" :on-click #(rf/dispatch [:altera-view view-precos])]
+     [[button :label "<" :class "btn-primary" :on-click #(rf/dispatch [:altera-view view-precos])] 
+      [feedback]
+      ]
      [:div
       [v-box :gap "10px"
        :children [[titulo @nome-atual :level2]
@@ -265,7 +277,11 @@
 (defn view-precos [] 
   (let [produtos (rf/subscribe [:produtos])]
     (template 
-     [button :label "Consulta" :class "btn-primary" :on-click #(rf/dispatch [:consulta-produtos])]
+     [
+      [button :label "Consulta" :class "btn-primary" :on-click #(rf/dispatch [:consulta-produtos])]
+      [button :label "Lista" :class "btn-primary" :on-click #(rf/dispatch [:lista])]
+      [feedback]
+     ]
      [:table.table
       [:tbody
        (for [p (sort-by :nome @produtos)]
@@ -274,6 +290,20 @@
            [button :label (:nome p) :class "btn-link" :on-click #(rf/dispatch [:consulta-historico (:nome p)])]]
           [:td (formata-preco (:melhor-preco p))]
           [:td (:sumario p)]
+          ])]])))
+
+
+(defn view-lista [] 
+  (let [lista (rf/subscribe [:lista])]
+    (template 
+     [[button :label "<-" :class "btn-primary" :on-click #(rf/dispatch [:altera-view view-precos])]
+      [feedback]]
+     [:table.table
+      [:tbody
+       (for [p @lista]
+         [:tr
+          [button :label (str "x") :class "btn-link" :on-click #(rf/dispatch [:remove-item-lista (:nome p)])]
+          [:td (str (:nome p))]
           ])]])))
 
 ;; -------------------------
