@@ -160,7 +160,7 @@
                  :on-failure [:falha-http]}}))
 
 (defn lista [db]
-  (map (fn [e] {:comprar true :nome (:nome e)}) (:produtos db)) )
+  (map (fn [e] {:categoria (:categoria e) :comprar true :nome (:nome e)}) (:produtos db)) )
 
 (rf/reg-event-db
  :lista
@@ -298,13 +298,15 @@
     (template 
      [[button :label "<-" :class "btn-primary" :on-click #(rf/dispatch [:altera-view view-precos])]
       [feedback]]
-     [:table.table
-      [:tbody
-       (for [p @lista]
+     (for [p (group-by :categoria @lista)]
+       [:table.table 
+        [:tbody
          [:tr
-          [button :label (str "x") :class "btn-link" :on-click #(rf/dispatch [:remove-item-lista (:nome p)])]
-          [:td (str (:nome p))]
-          ])]])))
+          [:td (first p)]
+          (for [e (sort-by :nome (second p))]
+            [:tr 
+             [button :label (str "x") :class "btn-link" :on-click #(rf/dispatch [:remove-item-lista (:nome p)])]
+             [:td (:nome e)]])]]])))) 
 
 ;; -------------------------
 ;; Routes
